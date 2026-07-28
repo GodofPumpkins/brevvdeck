@@ -1,10 +1,9 @@
-// BrevvDeck — Custom 4-Deck DJ Controller Script for Mixxx (v0.4)
+// BrevvDeck — Custom 4-Deck DJ Controller Script for Mixxx (v0.5)
 //
 // Handles logic that cannot be expressed purely in the XML mapping:
 //   - Beat jump encoder (relative rotation → fwd/back jumps; shift+rotate → halve/double size)
 //   - Beat jump encoder push (cycle through beat jump size list)
 //   - Loop encoder (relative rotation → loop halve/double)
-//   - Playback position motorized fader (14-bit seeking)
 //   - Scrub joystick (1-axis spring-return joystick for variable-speed scrubbing)
 //   - Hotcue/Roll dual-mode buttons (hardware toggle selects hotcue vs slip-roll)
 //   - Shift button state management (global left/right + per-deck)
@@ -12,6 +11,8 @@
 //   - FX select/focus cycling
 //   - Sampler trigger buttons (play if loaded, load if empty)
 //   - 7-segment display update (loop size + beat jump size via CC output)
+//
+// Rate and playback-position faders use soft takeover via XML — no script needed.
 //
 // MIDI Channel Assignment:
 //   Ch 1-4 (0x90-0x93 / 0xB0-0xB3) = Decks 1-4
@@ -58,7 +59,6 @@ for (let i = 1; i <= 4; i++) {
     BrevvDeck.deckState[i] = {
         shifted: false,
         beatJumpSizeIndex: 3,  // Start at 4 beats (index into BEAT_JUMP_SIZES)
-        positionMSB: 0,        // Last received position fader MSB (for 14-bit)
         rollMode: false,       // false = hotcue mode, true = slip-roll mode
                                // (set by firmware when it reads the hardware toggle)
     };
@@ -143,6 +143,7 @@ BrevvDeck.init = function() {
         engine.softTakeover(group, "rate", true);
         engine.softTakeover(group, "volume", true);
         engine.softTakeover(group, "pregain", true);
+        engine.softTakeover(group, "playposition", true);
 
         // Initialize beat jump size
         const state = BrevvDeck.deckState[deck];
@@ -192,7 +193,7 @@ BrevvDeck.init = function() {
         BrevvDeck.refreshDisplay(deck);
     }
 
-    print("BrevvDeck: Initialized (v0.4)");
+    print("BrevvDeck: Initialized (v0.5)");
 };
 
 BrevvDeck.shutdown = function() {
@@ -356,29 +357,6 @@ BrevvDeck.loopEncoder = function(channel, control, value, status, group) {
     } else {
         engine.setValue(group, "loop_halve", 1);
     }
-};
-
-// --- Playback Position Fader (Motorized, 14-bit) ---
-// MSB arrives on CC 0x01, LSB on CC 0x21.
-// Combined to 0-16383, normalized to 0.0-1.0 for playposition.
-
-BrevvDeck.playpositionFader = function(channel, control, value, status, group) {
-    const deckNum = BrevvDeck.deckFromChannel(channel);
-    BrevvDeck.deckState[deckNum].positionMSB = value;
-
-    const combined = (value << 7);
-    let position = combined / 16383;
-    position = Math.max(0, Math.min(1, position));
-    engine.setValue(group, "playposition", position);
-};
-
-BrevvDeck.playpositionFaderLSB = function(channel, control, value, status, group) {
-    const deckNum = BrevvDeck.deckFromChannel(channel);
-    const msb = BrevvDeck.deckState[deckNum].positionMSB;
-    const combined = (msb << 7) | value;
-    let position = combined / 16383;
-    position = Math.max(0, Math.min(1, position));
-    engine.setValue(group, "playposition", position);
 };
 
 // --- Scrub Joystick ---

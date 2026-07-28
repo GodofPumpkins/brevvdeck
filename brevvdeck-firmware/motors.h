@@ -1,18 +1,11 @@
-// BrevvDeck Firmware — Motorized Fader Control
+// BrevvDeck Firmware — Motor Module (Removed in v0.5)
 //
-// 4× motorized faders (rate/pitch sliders), each with:
-//   - ADS1115 16-bit ADC (I2C) for precise position reading
-//   - PCA9685 12-bit PWM (I2C) for DRV8833 motor driver control
-//   - PID control loop tracking target positions from host
-//   - 3-state haptic machine: IDLE → SEEKING → HOLD → IDLE
-//   - Touch detection (capacitive sense on fader rail) to pause motor
-//   - 14-bit MIDI output when user overrides motor position
+// Motorized faders were removed due to supply issues. BPM/rate and playback
+// position faders are now standard slide pots read through the MUX analog
+// scanning pipeline (analog.cpp). Soft takeover is handled by Mixxx via the
+// XML mapping — no firmware motor control is required.
+//
+// This file is intentionally left as a stub to avoid breaking any build
+// system references. No functions are declared or implemented.
 
 #pragma once
-
-#include <Arduino.h>
-
-void motorsInit();
-void motorsScan();
-void motorsSetTarget(uint8_t deck, uint16_t target14bit);
-void motorsEnableKill(bool kill);

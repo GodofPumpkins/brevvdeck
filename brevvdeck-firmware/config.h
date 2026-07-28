@@ -4,7 +4,7 @@
 // This file centralizes all hardware pin assignments and tuning constants.
 // Change pins here if the PCB layout requires different routing.
 //
-// PIN ASSIGNMENT VERIFICATION (v0.4):
+// PIN ASSIGNMENT VERIFICATION (v0.5):
 //   All 42 Teensy 4.1 header pins (0-41) are assigned below with zero
 //   conflicts. Analog pins A4-A7 (18-21) are committed to I2C and I2S1,
 //   so ALL pot/fader/joystick inputs route through 3× CD74HC4067 MUXes.
@@ -36,9 +36,6 @@ constexpr uint8_t PIN_I2C_SCL = 19;
 // I2C addresses
 constexpr uint8_t MCP23017_ADDR_1 = 0x20;  // Button matrix bank A
 constexpr uint8_t MCP23017_ADDR_2 = 0x21;  // Button matrix bank B
-constexpr uint8_t ADS1115_ADDR_1  = 0x48;  // Motor fader pots 1-4
-constexpr uint8_t ADS1115_ADDR_2  = 0x49;  // Motor fader pots 5-8
-constexpr uint8_t PCA9685_ADDR    = 0x40;  // 16-ch motor PWM
 
 // ==========================================================================
 // SPI Bus (SPI — pins 11/13)
@@ -106,15 +103,10 @@ constexpr EncoderPins ENCODER_PINS[] = {
 constexpr int NUM_ENCODERS = 9;
 
 // ==========================================================================
-// Motor Kill Switch
-// ==========================================================================
-
-constexpr uint8_t PIN_MOTOR_KILL = 37;  // HIGH = motors disabled
-
-// ==========================================================================
 // Spare Pins
 // ==========================================================================
 
+// Pin 37 (D37): Spare (was Motor Kill Switch — no longer needed).
 // Pins 38 (A14), 39 (A15), 40 (A16), 41 (A17) are unused.
 // Available for future expansion (e.g., RGB LEDs, OLED, extra buttons).
 
@@ -129,46 +121,11 @@ constexpr uint8_t ENCODER_CENTER = 0x40;
 constexpr uint8_t CC_THRESHOLD = 1;
 
 // ==========================================================================
-// Motor PID Tuning
-// ==========================================================================
-
-constexpr float MOTOR_KP = 2.0f;
-constexpr float MOTOR_KI = 0.1f;
-constexpr float MOTOR_KD = 0.5f;
-constexpr float MOTOR_INTEGRAL_MAX = 1000.0f;
-constexpr float MOTOR_OUTPUT_MAX = 4095.0f;
-
-// Back-EMF / position-jump threshold for detecting user touch (14-bit units)
-constexpr int16_t BEMF_THRESHOLD = 200;
-
-// Position tolerance for "target reached" (14-bit units, ~0.5% of range)
-constexpr int16_t POSITION_TOLERANCE = 80;
-
-// Time (ms) the fader must be stable before returning to software tracking
-constexpr uint32_t USER_RELEASE_MS = 200;
-
-// ==========================================================================
-// Motorized Fader Count
-// ==========================================================================
-
-constexpr int NUM_FADERS = 8;  // 4 rate + 4 position
-
-// ==========================================================================
-// Calibration
-// ==========================================================================
-
-// EEPROM address for fader calibration data
-// Each fader stores: magic(4) + min(2) + max(2) = 8 bytes
-constexpr int EEPROM_CAL_BASE = 0;
-constexpr uint32_t EEPROM_CAL_MAGIC = 0xBDCA11B0;
-
-// ==========================================================================
 // Scan Rates (microseconds)
 // ==========================================================================
 
 constexpr uint32_t ANALOG_SCAN_INTERVAL_US  = 1000;   // 1 kHz
 constexpr uint32_t BUTTON_SCAN_INTERVAL_US  = 2000;   // 500 Hz
-constexpr uint32_t MOTOR_UPDATE_INTERVAL_US = 8000;   // 125 Hz
 constexpr uint32_t ENCODER_SEND_INTERVAL_US = 4000;   // 250 Hz
 constexpr uint32_t LED_UPDATE_INTERVAL_US   = 5000;   // 200 Hz
 constexpr uint32_t DISPLAY_UPDATE_INTERVAL_US = 10000; // 100 Hz

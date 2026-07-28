@@ -1,6 +1,6 @@
 # BrevvDeck — Custom 4-Deck DJ Controller Design Document
 
-**Version:** 0.4
+**Version:** 0.5
 **Target Software:** Mixxx (open source DJ software)
 **Communication Protocol:** USB MIDI + USB Audio (composite device)
 **MCU:** Teensy 4.1 (i.MX RT1062, ARM Cortex-M7 @ 600 MHz)
@@ -16,10 +16,10 @@
 5. [Microcontroller & Hardware Architecture](#5-microcontroller--hardware-architecture)
    - 5.1 [Teensy 4.1 MCU](#51-microcontroller-teensy-41)
    - 5.2 [Input Architecture](#52-input-architecture)
-   - 5.3 [Motor Control](#53-motor-control)
+   - 5.3 [Non-Motorized Faders](#53-non-motorized-faders)
    - 5.4 [Button Matrix Wiring & Anti-Ghosting](#54-button-matrix-wiring--anti-ghosting)
 6. [Audio System](#6-audio-system)
-7. [Motorized Faders & Haptic Feedback](#7-motorized-faders--haptic-feedback)
+7. [Faders (Non-Motorized)](#7-faders-non-motorized)
 8. [Power & USB Architecture](#8-power--usb-architecture)
 9. [Physical Layout](#9-physical-layout)
 10. [Wiring Diagram](#10-wiring-diagram)
@@ -35,18 +35,17 @@
 
 BrevvDeck is a custom-built 4-deck DJ controller designed specifically for Mixxx. Key design goals:
 
-- **4 full deck sections** (stacked 2×2) with play/cue, beat jumping, hotcues/slip-rolls, loop controls, and motorized position/BPM faders
+- **4 full deck sections** (stacked 2×2) with play/cue, beat jumping, hotcues/slip-rolls, loop controls, and BPM/position faders
 - **4-channel mixer** with gain, 3-band EQ, quick effects, and channel faders
 - **2 assignable FX sections** with 4 knobs and 4 buttons each
 - **Library browser** and **global** sections
 - **4 sample trigger buttons**
 - **No jog wheels** — replaced by beat-jump encoders and 1-axis scrub joysticks
-- **8 motorized 100mm faders** (2 per deck: BPM rate + playback position) with haptic feedback
+- **8 standard 100mm faders** (2 per deck: BPM rate + playback position) with soft takeover
 - **2-digit 7-segment display per deck** showing loop size or beat-jump size
 - **USB class-compliant audio** with 2 stereo outputs (master + headphones) — same USB connection as MIDI
 - **Single USB cable** carries both MIDI control and audio (composite USB device)
 - **< 10 ms latency** target for control responsiveness
-- **Motor kill switch** to disable all motorized fader motors globally
 - **Single MCU** — Teensy 4.1 handles MIDI, audio, and all I/O
 
 ---
@@ -58,7 +57,7 @@ BrevvDeck is a custom-built 4-deck DJ controller designed specifically for Mixxx
 | Factor | MIDI | HID |
 |--------|------|-----|
 | **Mixxx XML mapping** | Full XML input/output — declarative, no JS needed for most controls | Script-only — all parsing in JavaScript |
-| **Output/feedback** | Native XML `<output>` — easy motorized fader feedback | Custom HID output reports in JS |
+| **Output/feedback** | Native XML `<output>` — LED and display feedback | Custom HID output reports in JS |
 | **Resolution** | 7-bit (0-127) standard; 14-bit with MSB/LSB | Arbitrary (8/10/12/16-bit natively) |
 | **Firmware** | Teensy USB MIDI built-in | Also supported, but more complex |
 | **Debugging** | Many MIDI monitoring tools | Fewer tools |
@@ -66,8 +65,8 @@ BrevvDeck is a custom-built 4-deck DJ controller designed specifically for Mixxx
 ### Why MIDI
 
 1. **XML mapping simplicity**: Custom CC/Note assignments map directly to Mixxx controls.
-2. **Motorized fader feedback**: XML output mappings send `playposition` and `rate` values back automatically.
-3. **14-bit resolution**: CC MSB/LSB pairs give 16,384 steps — ~0.006 mm on a 100mm fader.
+2. **Soft takeover support**: XML `<soft-takeover>` option handles pick-up behaviour for rate and position faders without jumps.
+3. **14-bit resolution**: CC MSB/LSB pairs give 16,384 steps for controls that need precision.
 4. **Teensy has native MIDI**: `usb_midi.h` provides zero-effort USB MIDI with the Teensyduino core.
 
 ### MIDI Channel Assignment
@@ -105,13 +104,13 @@ Each deck contains:
 | Loop Deactivate | LED button | 1 | Exit/deactivate current loop |
 | Beat Jump Encoder | Rotary encoder (infinite) | 1 | Rotate: jump fwd/back. Shift+rotate: halve/double jump size. Push: cycle jump size |
 | Loop Encoder | Rotary encoder (infinite) | 1 | Rotate: halve/double loop. Push: reloop toggle |
-| BPM/Rate Fader | Motorized 100mm fader | 1 | Adjust playback speed. Motor for sync |
-| Playback Position Fader | Motorized 100mm fader | 1 | Track position 0-100%. Motor tracks playback |
+| BPM/Rate Fader | 100mm slide fader | 1 | Adjust playback speed (soft takeover) |
+| Playback Position Fader | 100mm slide fader | 1 | Track position 0-100% (soft takeover) |
 | Scrub Joystick | 1-axis spring-return joystick | 1 | Variable-speed scrub (left=backward, right=forward, speed ∝ deflection) |
 | 7-Segment Display | 2-digit 7-seg | 1 | Shows loop size; shift held → shows beat-jump size |
 | Shift | Button | 1 | Modifier (shared per deck pair or per deck) |
 
-**Per deck: 18 buttons + 1 toggle + 2 encoders + 2 motorized faders + 1 joystick + 1 display = 25 controls**
+**Per deck: 18 buttons + 1 toggle + 2 encoders + 2 faders + 1 joystick + 1 display = 25 controls**
 **4 decks total: 100 controls + 4 displays**
 
 ### 3.2 Mixer Section (4-channel)
@@ -171,19 +170,18 @@ Each deck contains:
 |---------|------|-------|---------|
 | Shift L | Button | 1 | Left shift (decks 1/3) |
 | Shift R | Button | 1 | Right shift (decks 2/4) |
-| Motor Kill | Toggle switch | 1 | Disable all motorized fader motors |
 
 ### 3.7 Grand Total
 
-| Section | Buttons | Toggles | Pots | Encoders | Faders | Mot. Faders | Joysticks | Displays |
-|---------|---------|---------|------|----------|--------|-------------|-----------|----------|
-| 4× Decks | 60 | 4 | 0 | 8 | 0 | 8 | 4 | 4 |
-| Mixer | 16 | 0 | 23 | 0 | 4-5 | 0 | 0 | 0 |
-| 2× FX | 8 | 0 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Library | 3 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
-| Sampler | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| Global | 2 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
-| **TOTAL** | **93** | **5** | **31** | **9** | **4-5** | **8** | **4** | **4** |
+| Section | Buttons | Toggles | Pots | Encoders | Faders | Joysticks | Displays |
+|---------|---------|---------|------|----------|--------|-----------|----------|
+| 4× Decks | 60 | 4 | 0 | 8 | 8 | 4 | 4 |
+| Mixer | 16 | 0 | 23 | 0 | 4-5 | 0 | 0 |
+| 2× FX | 8 | 0 | 8 | 0 | 0 | 0 | 0 |
+| Library | 3 | 0 | 0 | 1 | 0 | 0 | 0 |
+| Sampler | 4 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Global | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **TOTAL** | **93** | **4** | **31** | **9** | **12-13** | **4** | **4** |
 
 **Grand total: ~154 physical controls + 4 displays**
 
@@ -213,8 +211,8 @@ Per deck (`[ChannelN]`):
 | BJ Push | `[ChannelN]` | beatjump_size cycle | Note | Via JS |
 | Loop Enc Turn | `[ChannelN]` | `loop_double`/`loop_halve` | CC rel | Via JS |
 | Loop Enc Push | `[ChannelN]` | `reloop_toggle` | Note | |
-| BPM Fader | `[ChannelN]` | `rate` | CC 14-bit | Motor out: `rate` |
-| Position Fader | `[ChannelN]` | `playposition` | CC 14-bit | Motor out: `playposition`. Via JS |
+| BPM Fader | `[ChannelN]` | `rate` | CC 7-bit | Soft takeover |
+| Position Fader | `[ChannelN]` | `playposition` | CC 7-bit | Soft takeover |
 | Scrub Joystick | `[ChannelN]` | `jog` | CC | Via JS. Spring-return, speed ∝ deflection |
 
 ### 4.2 Mixer → Mixxx
@@ -329,28 +327,28 @@ Per FX unit (`[EffectRack1_EffectUnitN]`):
 |--------|-------|------|--------|
 | Rotary pots (EQ, FX, mixer) | 31 | 12 | 3× CD74HC4067 MUX → Teensy ADC |
 | Channel volume faders | 4-5 | 12 | MUX #3 → Teensy ADC |
-| Motorized fader pots | 8 | 16 | 2× ADS1115 external ADC (I2C) |
+| Rate faders | 4 | 7 | MUX #3 → Teensy ADC |
+| Position faders | 4 | 7 | MUX #2/#3 → Teensy ADC |
 | Scrub joysticks | 4 | 12 | MUX #3 → Teensy ADC |
-| **Total** | **~48** | | |
+| **Total** | **~51** | | |
 
 **MUX configuration (3× CD74HC4067):**
 - All pot/fader/joystick inputs are multiplexed — no direct Teensy ADC pins are used.
   This avoids pin conflicts: Teensy pins A4-A7 (18-21) are committed to I2C (SDA/SCL)
   and I2S1 (LRCLK/BCLK), so they cannot serve as analog inputs.
 - MUX #1 (A0, 16ch): Gains (4) + EQ High/Mid/Low (12) = 16 channels
-- MUX #2 (A1, 16ch): Quick FX (4) + FX1 knobs/DW (4) + FX2 knobs/DW (4) + HP Mix + Master Vol + HP Vol + spare = 16 channels
-- MUX #3 (A2, 16ch): Volume faders (4) + crossfader (1) + joysticks (4) + 7 spare = 16 channels
+- MUX #2 (A1, 16ch): Quick FX (4) + FX1 knobs/DW (4) + FX2 knobs/DW (4) + HP Mix + Master Vol + HP Vol + Deck4 Position fader = 16 channels
+- MUX #3 (A2, 16ch): Volume faders (4) + crossfader (1) + joysticks (4) + Rate faders (4) + Position faders Deck1-3 (3) = 16 channels
 - All 3 MUXes share 4 address lines (S0-S3); each has its own COM→ADC pin
-- 2× ADS1115 (4-ch each, 16-bit) = 8 channels for motorized fader position (I2C)
 
 #### Digital Inputs
 
 | Source | Count | Method |
 |--------|-------|--------|
 | Buttons (all sections) | 93 | Button matrix via 2× MCP23017 (I2C) |
-| Toggle switches | 5 | Direct GPIO or MCP23017 |
+| Toggle switches | 4 | Direct GPIO or MCP23017 |
 | Rotary encoders (A/B pins) | 9×2 = 18 | Direct GPIO (quad timer HW decode where possible) |
-| **Total** | **~116** | |
+| **Total** | **~115** | |
 
 **Button matrix**: 10 rows × 10 columns on MCP23017 expanders = 100 positions (93 used + 7 spare).
 
@@ -363,11 +361,9 @@ Per FX unit (`[EffectRack1_EffectUnitN]`):
 - ~60 LEDs for button indicators
 - Driven by 8× 74HC595 shift registers (8 outputs each = 64 LEDs), daisy-chained on SPI bus
 
-### 5.3 Motor Control
+### 5.3 Non-Motorized Faders
 
-- 4× DRV8833 dual H-bridge motor drivers = 8 motor channels
-- PWM from PCA9685 (16-channel I2C PWM driver) → DRV8833 inputs
-- Motor kill switch: MOSFET on motor power rail, controlled by hardware toggle
+Rate/BPM and playback-position faders are standard 100mm slide potentiometers read through the MUX analog scanning pipeline (same path as volume faders). Each sends a 7-bit MIDI CC to Mixxx. Soft takeover is enabled in the XML mapping so that the first fader movement after a track load or value change does not cause a jump — Mixxx ignores the input until the physical position matches the software value.
 
 ### 5.4 Button Matrix Wiring & Anti-Ghosting
 
@@ -680,95 +676,34 @@ The USB Audio Class 2.0 composite device presents 4 output channels (2 stereo pa
 
 ---
 
-## 7. Motorized Faders & Haptic Feedback
+## 7. Faders (Non-Motorized)
 
 ### 7.1 Overview
 
-8× motorized 100mm faders (all same size — sourced from Alibaba):
-- 4× BPM/Rate faders (vertical)
-- 4× Playback Position faders (horizontal)
+8× standard 100mm slide potentiometers (B10K linear, non-motorized):
+- 4× BPM/Rate faders (one per deck)
+- 4× Playback Position faders (one per deck)
 
-### 7.2 Haptic Feedback — No Capacitive Sensor
+All faders are wired as passive voltage dividers and read through the MUX analog scanning pipeline. No motors, H-bridges, or external ADCs are involved.
 
-The goal is to provide slight resistance when the fader is software-controlled, and detect user override purely through motor back-EMF and position monitoring — **no additional touch sensor needed**.
+### 7.2 Soft Takeover
 
-#### Detection Method: Back-EMF + Position Monitoring
+Rate and playback-position faders use Mixxx's built-in soft takeover:
+- Enabled via `<soft-takeover />` in the XML mapping for `rate` and `playposition`
+- Also registered via `engine.softTakeover()` in the JS init for all 4 decks
+- Mixxx ignores fader input until the physical position crosses the current software value — preventing jumps on first touch
 
-When the motor is driving the fader to a target position:
+### 7.3 Playback Position Fader
 
-1. **Periodically disable the H-bridge** for a brief window (~100 µs every 10 ms)
-2. **Measure back-EMF voltage** across the motor terminals via ADC
-   - If the fader is stationary at target: back-EMF ≈ 0
-   - If the user is pushing the fader: back-EMF shows voltage from forced motor movement
-3. **Position delta monitoring**: Compare expected position change (from motor drive) against actual position change
-   - If actual change ≫ expected → user is moving the fader
-   - If actual change opposes motor direction → user is definitely overriding
+- Physical range: 0 (left) to 127 (right) → maps to `playposition` 0.0–1.0
+- Soft takeover prevents seek jumps when resuming control
+- For precise seeking, user moves fader past current playback position to "take over"
 
-#### Haptic Resistance Behavior
+### 7.4 BPM Rate Fader
 
-```
-┌───────────────────────────────────────────────────────┐
-│ Motorized Fader State Machine                         │
-├───────────────────────────────────────────────────────┤
-│                                                       │
-│  [SOFTWARE_TRACKING]                                  │
-│  Motor drives fader to target with PID control.       │
-│  Provides mild holding torque at target position      │
-│  (low PWM duty, ~15-20%) so user feels resistance.    │
-│      │                                                │
-│      │ User force detected (back-EMF or position Δ)   │
-│      ▼                                                │
-│  [USER_OVERRIDE]                                      │
-│  Motor stops driving. Fader position is sent to       │
-│  Mixxx. User has full control.                        │
-│      │                                                │
-│      │ No movement for 200ms + user force gone         │
-│      ▼                                                │
-│  [RETURNING]                                          │
-│  Motor gently returns fader to software target        │
-│  with reduced PWM (smooth return, not snap).          │
-│      │                                                │
-│      │ Target reached                                 │
-│      ▼                                                │
-│  [SOFTWARE_TRACKING] (loop)                           │
-│                                                       │
-└───────────────────────────────────────────────────────┘
-```
-
-#### Implementation on DRV8833
-
-The DRV8833 has a decay mode (fast/slow) that affects back-EMF measurement:
-- Use **fast decay** mode during measurement windows (both outputs low → motor coasts)
-- Read back-EMF on the motor terminal via a voltage divider to ADC
-- Add Schottky diodes for flyback protection (already built into DRV8833)
-
-### 7.3 Motor Kill Switch
-
-- Physical toggle switch on the controller surface
-- Connected to a **P-channel MOSFET** (e.g., IRF9540) on the motor 5V power rail
-- When switch is OFF: MOSFET cuts power to all DRV8833 motor drivers
-- Faders still function as normal potentiometers (position sensing unaffected)
-- Read by firmware via GPIO to suppress motor-related MIDI output processing
-
-### 7.4 Playback Position Fader
-
-- During playback: motor slowly moves fader right (0.33 mm/sec for a 5-minute track)
-- User grab: motor disengages, position sent to Mixxx for seeking
-- User release: motor re-engages, returns to current playback position
-
-### 7.5 BPM Rate Fader
-
-- Reflects current rate/BPM setting
-- On sync: motor jumps fader to synced position
-- User override: changes rate, motor holds at new position
-
-### 7.6 Calibration
-
-1. Hold both Shift buttons simultaneously
-2. All motorized faders drive to minimum → firmware records ADC min values
-3. User presses any button → faders drive to maximum → firmware records ADC max values
-4. User presses button again → values stored in Teensy EEPROM
-5. Normal operation resumes with calibrated range
+- Physical range: 0–127 → maps to `rate` (±key range set in Mixxx preferences)
+- Soft takeover prevents BPM jump on sync resume
+- Center position (64) = ±0% rate
 
 ---
 
@@ -801,20 +736,16 @@ USB-C 5V input (from host or powered hub)
     │
     ├── 3.3V LDO (AMS1117-3.3) → DACs (PCM5102A × 2, isolated analog)
     │
-    ├── 5V → Motor kill switch (P-MOSFET) → DRV8833 × 4
-    │         └── Capacitor bank: 4× 2200µF electrolytic
-    │
     ├── 5V → TPA6120A2 headphone amp (or ±5V via charge pump)
     │
-    └── 5V → PCA9685, MAX7219, 74HC595, MCP23017 (logic)
+    └── 5V → MAX7219, 74HC595, MCP23017 (logic)
 ```
 
 ### 8.3 Grounding
 
 - Separate analog and digital ground planes
 - Star ground at USB-C input
-- Ferrite beads (600Ω @ 100MHz) between motor power and audio power
-- Motor ground returns routed away from DAC ground
+- Ferrite beads (600Ω @ 100MHz) between digital logic and audio power
 
 ---
 
@@ -834,7 +765,7 @@ The DJ stands at the bottom edge. Decks are stacked (1 over 3 on left, 2 over 4 
 │  ┌──── DECK 1 ────┐  ┌─── GLOBAL/LIB ──┐  ┌──── DECK 2 ────┐                │
 │  │ POS ═══════════ │  │    [SHFT L]      │  │ POS ═══════════ │                │
 │  │ JS [◄───▌───►] │  │    [SHFT R]      │  │ JS [◄───▌───►] │                │
-│  │ BPM ═══════════ │  │   [MOTOR OFF]    │  │ BPM ═══════════ │                │
+│  │ BPM ═══════════ │  │                  │  │ BPM ═══════════ │                │
 │  │                 │  │                  │  │                 │                │
 │  │ BJ[enc] LP[enc] │  │                  │  │ BJ[enc] LP[enc] │                │
 │  │ [LI][LO][LD]    │  │  ┌──LIBRARY──┐  │  │ [LI][LO][LD]    │                │
@@ -894,8 +825,8 @@ Legend:
   (XX)  = Rotary knob/pot        [XX]  = Button (LED where applicable)
   ═══   = Fader (motorized where noted)
   enc   = Rotary encoder         [88]  = 2-digit 7-segment display
-  POS   = Playback position motorized fader (horizontal)
-  BPM   = BPM/Rate motorized fader
+  POS   = Playback position fader (horizontal)
+  BPM   = BPM/Rate fader
   JS    = Scrub joystick (1-axis, spring-return)
   HC    = Hotcue buttons
   BJ    = Beat jump encoder      LP    = Loop encoder
@@ -958,24 +889,23 @@ Legend:
      └────────┘      └──────┘  │  └────┘      └──┬───┘└──┬─────┘
                                │                  │       │
      ┌────────────┐            │                  ▼       ▼
-     │PCA9685     │            │            ┌────────┐┌───────┐
-     │16-ch PWM   │            │            │Master  ││HP Out │
-     │(I2C)       │            │            │RCA/TRS ││3.5/6.3│
-     └──┬─────────┘            │            │Booth   ││mm     │
-        │                      │            └────────┘└───────┘
-        ▼                      │
-     ┌──────────┐              │
-     │4×DRV8833 │              │     ┌──────────────┐
-     │Motor     │              │     │8× 74HC595    │
-     │Drivers   │              │     │Shift Regs    │
-     └──┬───────┘              │     │(SPI)         │
-        │                      │     └──┬───────────┘
-        ▼                      │        │
-     ┌──────────┐              │        ▼
-     │Motor Kill│              │     ┌─────┐
-     │Switch    │              │     │60+  │
-     │(P-MOSFET)│              │     │LEDs │
-     └──────────┘              │     └─────┘
+     │            │            │            ┌────────┐┌───────┐
+     │            │            │            │Master  ││HP Out │
+     │(unused)    │            │            │RCA/TRS ││3.5/6.3│
+     └────────────┘            │            │Booth   ││mm     │
+                               │            └────────┘└───────┘
+                               │
+                               │     ┌──────────────┐
+                               │     │8× 74HC595    │
+                               │     │Shift Regs    │
+                               │     │(SPI)         │
+                               │     └──┬───────────┘
+                               │        │
+                               │        ▼
+                               │     ┌─────┐
+                               │     │60+  │
+                               │     │LEDs │
+                               │     └─────┘
                                │
                         ┌──────┴──────┐
                         │Analog inputs│
@@ -993,10 +923,7 @@ All I2C devices share one I2C bus with different addresses:
 Teensy 4.1 Wire (Pin 18 = SDA, Pin 19 = SCL)
     │
     ├── MCP23017 #1 (addr 0x20) — Button matrix rows/cols (bank A)
-    ├── MCP23017 #2 (addr 0x21) — Button matrix rows/cols (bank B)
-    ├── ADS1115 #1  (addr 0x48) — Motor fader pots 1-4
-    ├── ADS1115 #2  (addr 0x49) — Motor fader pots 5-8
-    └── PCA9685     (addr 0x40) — 16-ch PWM for motor drivers
+    └── MCP23017 #2 (addr 0x21) — Button matrix rows/cols (bank B)
 ```
 
 ### 10.3 SPI Bus (SPI — pins 11/13)
@@ -1033,52 +960,19 @@ Note: All pot/fader/joystick analog inputs go through MUXes.
       This design frees pins 22-36 for 9 dedicated encoder pairs.
 ```
 
-### 10.5 Motor Driver Wiring
+### 10.5 Rate/Position Fader Wiring
+
+All 8 faders (4 rate + 4 position) are wired as simple resistive voltage dividers routed through the MUX network. There is no motor, H-bridge, or external ADC involved.
 
 ```
-PCA9685 (I2C PWM)              DRV8833 #1 (Deck 1)
-    Ch0 (PWM) ──────────────→ AIN1 (motor 1 fwd)
-    Ch1 (PWM) ──────────────→ AIN2 (motor 1 rev)
-    Ch2 (PWM) ──────────────→ BIN1 (motor 2 fwd)
-    Ch3 (PWM) ──────────────→ BIN2 (motor 2 rev)
+3.3V ──→ Fader pin 1 (high end)
+         Fader pin 2 (wiper) ──→ CD74HC4067 MUX channel input
+GND  ──→ Fader pin 3 (low end)
 
-PCA9685                        DRV8833 #2 (Deck 2)
-    Ch4 ────────────────────→ AIN1
-    Ch5 ────────────────────→ AIN2
-    Ch6 ────────────────────→ BIN1
-    Ch7 ────────────────────→ BIN2
-
-PCA9685                        DRV8833 #3 (Deck 3)
-    Ch8  ───────────────────→ AIN1
-    Ch9  ───────────────────→ AIN2
-    Ch10 ───────────────────→ BIN1
-    Ch11 ───────────────────→ BIN2
-
-PCA9685                        DRV8833 #4 (Deck 4)
-    Ch12 ───────────────────→ AIN1
-    Ch13 ───────────────────→ AIN2
-    Ch14 ───────────────────→ BIN1
-    Ch15 ───────────────────→ BIN2
-
-Motor Power (5V from USB):
-    5V ──→ [Motor Kill Switch / P-MOSFET] ──→ DRV8833 VM pins (all 4)
-                                               └── 4× 2200µF caps
-    GND ──→ DRV8833 GND pins (all 4)
-
-Each DRV8833:
-    VM   ← 5V (switched)
-    GND  ← GND
-    AIN1 ← PCA9685 PWM
-    AIN2 ← PCA9685 PWM
-    BIN1 ← PCA9685 PWM
-    BIN2 ← PCA9685 PWM
-    AOUT1/AOUT2 ──→ Motor A terminals
-    BOUT1/BOUT2 ──→ Motor B terminals
-    nSLEEP ← 3.3V (always enabled; kill switch on power rail)
-    nFAULT → (optional: read by Teensy GPIO for fault detection)
-
-Motor potentiometer wipers:
-    → ADS1115 analog inputs (0-3.3V, via voltage divider if needed)
+MUX routing (see Section 11.7):
+  Rate faders Deck1-4  : MUX #3 channels 9-12
+  Position faders Deck1-3 : MUX #3 channels 13-15
+  Position fader Deck4    : MUX #2 channel 15
 ```
 
 ### 10.6 Audio Wiring (I2S via SAI1/SAI2)
@@ -1162,8 +1056,8 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 
 | Pin | Function | Connected To |
 |-----|----------|-------------|
-| 18 | SDA0 (Wire) | MCP23017 ×2, ADS1115 ×2, PCA9685 |
-| 19 | SCL0 (Wire) | MCP23017 ×2, ADS1115 ×2, PCA9685 |
+| 18 | SDA0 (Wire) | MCP23017 ×2 |
+| 19 | SCL0 (Wire) | MCP23017 ×2 |
 
 **SPI Bus (SPI):**
 
@@ -1205,11 +1099,11 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 | 33, 34 | Encoder 8 (Deck4 Loop) | EC11 encoder A/B |
 | 35, 36 | Encoder 9 (Browse) | EC11 encoder A/B |
 
-**Motor Kill + Spare:**
+**Spare Pins:**
 
 | Pin | Function | Connected To |
 |-----|----------|-------------|
-| 37 | Motor Kill Switch | GPIO input (reads toggle switch state) |
+| 37 | Spare (D37) | — (was Motor Kill Switch — removed in v0.5) |
 | 38 | Spare (A14) | — |
 | 39 | Spare (A15) | — |
 | 40 | Spare (A16) | — |
@@ -1255,56 +1149,14 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 | GPB0-7 | B0-B7 | Matrix Row 8-9 + spare | Button row wire |
 | A0-A2 | — | Address = 001 | A0 → 3.3V (addr 0x21) |
 
-### 11.4 ADS1115 #1 (Addr 0x48) — Motor Fader Pots 1-4
+### 11.4 CD74HC4067 MUX Channel Assignments
 
-| Pin | Function | Connected To |
-|-----|----------|-------------|
-| AIN0 | Analog In 0 | Deck 1 BPM fader pot wiper |
-| AIN1 | Analog In 1 | Deck 1 Position fader pot wiper |
-| AIN2 | Analog In 2 | Deck 2 BPM fader pot wiper |
-| AIN3 | Analog In 3 | Deck 2 Position fader pot wiper |
-| SDA | I2C data | Teensy pin 18 |
-| SCL | I2C clock | Teensy pin 19 |
-| ADDR | Address | GND (0x48) |
-| VDD | Power | 3.3V |
-
-### 11.5 ADS1115 #2 (Addr 0x49) — Motor Fader Pots 5-8
-
-| Pin | Function | Connected To |
-|-----|----------|-------------|
-| AIN0 | Analog In 0 | Deck 3 BPM fader pot wiper |
-| AIN1 | Analog In 1 | Deck 3 Position fader pot wiper |
-| AIN2 | Analog In 2 | Deck 4 BPM fader pot wiper |
-| AIN3 | Analog In 3 | Deck 4 Position fader pot wiper |
-| ADDR | Address | VDD (0x49) |
-
-### 11.6 PCA9685 (Addr 0x40) — Motor PWM
-
-| Channel | Function | Connected To |
-|---------|----------|-------------|
-| Ch 0 | Deck 1 BPM motor fwd | DRV8833 #1 AIN1 |
-| Ch 1 | Deck 1 BPM motor rev | DRV8833 #1 AIN2 |
-| Ch 2 | Deck 1 Pos motor fwd | DRV8833 #1 BIN1 |
-| Ch 3 | Deck 1 Pos motor rev | DRV8833 #1 BIN2 |
-| Ch 4 | Deck 2 BPM motor fwd | DRV8833 #2 AIN1 |
-| Ch 5 | Deck 2 BPM motor rev | DRV8833 #2 AIN2 |
-| Ch 6 | Deck 2 Pos motor fwd | DRV8833 #2 BIN1 |
-| Ch 7 | Deck 2 Pos motor rev | DRV8833 #2 BIN2 |
-| Ch 8 | Deck 3 BPM motor fwd | DRV8833 #3 AIN1 |
-| Ch 9 | Deck 3 BPM motor rev | DRV8833 #3 AIN2 |
-| Ch 10 | Deck 3 Pos motor fwd | DRV8833 #3 BIN1 |
-| Ch 11 | Deck 3 Pos motor rev | DRV8833 #3 BIN2 |
-| Ch 12 | Deck 4 BPM motor fwd | DRV8833 #4 AIN1 |
-| Ch 13 | Deck 4 BPM motor rev | DRV8833 #4 AIN2 |
-| Ch 14 | Deck 4 Pos motor fwd | DRV8833 #4 BIN1 |
-| Ch 15 | Deck 4 Pos motor rev | DRV8833 #4 BIN2 |
-
-### 11.7 CD74HC4067 MUX Channel Assignments
+*(Renumbered from 11.7 — ADS1115 and PCA9685 sections removed in v0.5)*
 
 **MUX #1 (ADC via Teensy A0, pin 14):**
 
 | Ch | Analog Input |
-|----|-------------|
+|----|--------------|
 | 0 | Deck 1 Gain pot |
 | 1 | Deck 2 Gain pot |
 | 2 | Deck 3 Gain pot |
@@ -1325,7 +1177,7 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 **MUX #2 (ADC via Teensy A1, pin 15):**
 
 | Ch | Analog Input |
-|----|-------------|
+|----|--------------|
 | 0 | Ch1 Quick FX |
 | 1 | Ch2 Quick FX |
 | 2 | Ch3 Quick FX |
@@ -1341,12 +1193,12 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 | 12 | Headphone Mix pot |
 | 13 | Master Volume pot |
 | 14 | Headphone Volume pot |
-| 15 | Spare |
+| 15 | Deck 4 Position fader |
 
 **MUX #3 (ADC via Teensy A2, pin 16):**
 
 | Ch | Analog Input |
-|----|-------------|
+|----|--------------|
 | 0 | Ch1 Volume fader |
 | 1 | Ch2 Volume fader |
 | 2 | Ch3 Volume fader |
@@ -1356,7 +1208,13 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 | 6 | Deck 2 Scrub Joystick |
 | 7 | Deck 3 Scrub Joystick |
 | 8 | Deck 4 Scrub Joystick |
-| 9-15 | Spare (7 channels) |
+| 9 | Deck 1 Rate/BPM fader |
+| 10 | Deck 2 Rate/BPM fader |
+| 11 | Deck 3 Rate/BPM fader |
+| 12 | Deck 4 Rate/BPM fader |
+| 13 | Deck 1 Position fader |
+| 14 | Deck 2 Position fader |
+| 15 | Deck 3 Position fader |
 
 ---
 
@@ -1368,10 +1226,7 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 |-----------|-----|-----------|-------|-------|
 | Teensy 4.1 | 1 | $29.25 | $29.25 | Main MCU (MIDI + Audio) |
 | MCP23017 I2C I/O Expander (DIP/SOIC) | 2 | $1.80 | $3.60 | Button matrix |
-| ADS1115 16-bit ADC (breakout) | 2 | $3.50 | $7.00 | Motor fader position |
-| PCA9685 16-ch PWM (breakout) | 1 | $3.00 | $3.00 | Motor PWM generation |
 | CD74HC4067 16-ch MUX (breakout) | 3 | $1.00 | $3.00 | Analog input MUX |
-| DRV8833 Dual H-Bridge (breakout) | 4 | $2.50 | $10.00 | Motor drivers |
 | PCM5102A DAC (breakout) | 2 | $4.00 | $8.00 | Audio output |
 | MAX7219 LED Driver (breakout) | 2 | $1.50 | $3.00 | 7-segment displays |
 | 74HC595 Shift Register (DIP) | 8 | $0.30 | $2.40 | LED output |
@@ -1379,18 +1234,17 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 | TPA6120A2 Headphone Amp | 1 | $6.00 | $6.00 | HP driver |
 | ICL7660 Charge Pump | 1 | $1.00 | $1.00 | -5V for HP amp |
 | AMS1117-3.3 LDO Regulator | 1 | $0.30 | $0.30 | 3.3V for DACs (isolated) |
-| IRF9540 P-Channel MOSFET | 1 | $0.80 | $0.80 | Motor kill switch |
 
 ### 12.2 Electromechanical
 
 | Component | Qty | Unit Cost | Total | Notes |
 |-----------|-----|-----------|-------|-------|
-| Motorized Slide Pot 100mm (B10K) | 8 | $8.00 | $64.00 | Alibaba sourced |
+| Standard Slide Pot 100mm (B10K) | 8 | $2.00 | $16.00 | Rate + position faders (1 per deck each) |
 | Standard Slide Pot 60mm (B10K) | 5 | $2.00 | $10.00 | Volume + crossfader |
 | Rotary Potentiometer B10K | 31 | $0.60 | $18.60 | EQ, FX, gain, mixer |
 | Rotary Encoder w/ Push (EC11) | 9 | $1.00 | $9.00 | BeatJump, Loop, Browse |
 | Tactile Push Button (6mm, LED) | 93 | $0.30 | $27.90 | All buttons |
-| Toggle Switch (SPDT, mini) | 5 | $0.50 | $2.50 | HC/Roll mode ×4, Motor kill |
+| Toggle Switch (SPDT, mini) | 4 | $0.50 | $2.00 | HC/Roll mode ×4 |
 | 1-Axis Analog Joystick (spring-return) | 4 | $2.50 | $10.00 | Deck scrub joysticks |
 | 2-Digit 7-Segment Display (common cathode) | 4 | $0.80 | $3.20 | Loop/BJ size display |
 | Knob Cap (D-shaft, 6mm) | 31 | $0.40 | $12.40 | For rotary pots |
@@ -1418,22 +1272,18 @@ The Teensy 4.1 has 42 header pins (0-41). All are assigned below with **zero con
 | 220Ω 1/4W (LED current limiting) | 70 | $0.02 | $1.40 | For 74HC595 LED outputs |
 | 10kΩ 1/4W (pull-up/pull-down) | 30 | $0.02 | $0.60 | I2C pull-ups, MUX, buttons |
 | 4.7kΩ 1/4W (I2C pull-up) | 2 | $0.02 | $0.04 | I2C bus SDA/SCL |
-| 100kΩ 1/4W (voltage dividers) | 16 | $0.02 | $0.32 | Back-EMF dividers |
-| 47kΩ 1/4W (voltage dividers) | 8 | $0.02 | $0.16 | Back-EMF dividers |
 | 1kΩ 1/4W (general purpose) | 10 | $0.02 | $0.20 | Gate resistors, misc |
 | 10Ω 1/4W (ferrite alternative) | 4 | $0.02 | $0.08 | Power rail filtering |
 | **Capacitors** | | | | |
-| 100nF (0.1µF) ceramic | 40 | $0.03 | $1.20 | Decoupling caps for every IC |
-| 10µF electrolytic | 10 | $0.05 | $0.50 | Power supply filtering |
-| 2200µF 10V electrolytic | 4 | $0.40 | $1.60 | Motor surge current bank |
+| 100nF (0.1µF) ceramic | 30 | $0.03 | $0.90 | Decoupling caps for every IC |
+| 10µF electrolytic | 6 | $0.05 | $0.30 | Power supply filtering |
 | 1µF ceramic | 4 | $0.05 | $0.20 | DAC output filtering |
 | 10nF ceramic | 8 | $0.03 | $0.24 | High-frequency filtering |
 | 22pF ceramic | 4 | $0.03 | $0.12 | Crystal load caps (if needed) |
 | **Diodes** | | | | |
 | 1N4148 Signal Diode | 100 | $0.02 | $2.00 | Button matrix anti-ghosting |
-| 1N5819 Schottky Diode | 8 | $0.05 | $0.40 | Motor flyback (backup) |
 | **Inductors / Ferrites** | | | | |
-| Ferrite Bead 600Ω@100MHz | 4 | $0.10 | $0.40 | Motor/audio power isolation |
+| Ferrite Bead 600Ω@100MHz | 4 | $0.10 | $0.40 | Digital/audio power isolation |
 
 ### 12.5 PCB & Enclosure
 
@@ -1483,30 +1333,24 @@ The entire controller runs on a single Teensy 4.1 with a monolithic firmware. Th
 │  └────────────────────────────┘   └────────────────────────┘   │
 │                                                                 │
 │  ┌──────────────┐    ┌────────────────────┐                    │
-│  │ Analog Scan   │    │  Motor Control     │                    │
-│  │ (3× MUX→ADC)  │    │  (PID + Haptic)    │                    │
-│  │ 48 MUX ch      │    │  8 faders          │                    │
-│  │ ~1 kHz rate   │    │  PCA9685 PWM out   │                    │
-│  └──────────────┘    │  Back-EMF detect   │                    │
-│                       └────────────────────┘                    │
+│  │ Analog Scan   │    │  LED Output        │                    │
+│  │ (3× MUX→ADC)  │    │  74HC595 (SPI)     │                    │
+│  │ 51 MUX ch      │    │  64 outputs        │                    │
+│  │ ~1 kHz rate   │    │                    │                    │
+│  └──────────────┘    └────────────────────┘                    │
 │                                                                 │
 │  ┌──────────────┐    ┌────────────────────┐                    │
-│  │ Button Matrix │    │  LED Output        │                    │
-│  │ (MCP23017)    │    │  74HC595 (SPI)     │                    │
-│  │ 10×10 scan    │    │  64 outputs        │                    │
+│  │ Button Matrix │    │  7-Seg Display     │                    │
+│  │ (MCP23017)    │    │  MAX7219 (SPI)     │                    │
+│  │ 10×10 scan    │    │  4× 2-digit        │                    │
 │  │ ~500 Hz       │    │                    │                    │
 │  └──────────────┘    └────────────────────┘                    │
 │                                                                 │
-│  ┌──────────────┐    ┌────────────────────┐                    │
-│  │ Encoder Read  │    │  7-Seg Display     │                    │
-│  │ (GPIO ISR /   │    │  MAX7219 (SPI)     │                    │
-│  │  quad timer)  │    │  4× 2-digit        │                    │
-│  │ 9 encoders    │    │                    │                    │
-│  └──────────────┘    └────────────────────┘                    │
-│                                                                 │
 │  ┌──────────────┐                                              │
-│  │ Calibration   │                                              │
-│  │ EEPROM store  │                                              │
+│  │ Encoder Read  │                                              │
+│  │ (GPIO ISR /   │                                              │
+│  │  quad timer)  │                                              │
+│  │ 9 encoders    │                                              │
 │  └──────────────┘                                              │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -1532,7 +1376,7 @@ This creates a composite USB device with:
 | Analog | `analog.h/cpp` | MUX scanning + direct ADC reading |
 | Buttons | `buttons.h/cpp` | MCP23017 button matrix scanning |
 | Encoders | `encoders.h/cpp` | Rotary encoder reading (ISR or polling) |
-| Motors | `motors.h/cpp` | PID control, haptic state machine, ADS1115 reading |
+| Motors | `motors.h` | Stub only — removed in v0.5 (non-motorized faders) |
 | LEDs | `leds.h/cpp` | 74HC595 shift register output |
 | Display | `display.h/cpp` | MAX7219 7-segment display |
 | MidiMap | `midi_map.h` | Channel, note, CC constants |
@@ -1564,13 +1408,13 @@ MIDI CC/Note assignments are chosen so most controls map directly in XML without
 | Note 0x10-0x17 | Hotcue/Roll 1-8 | Script-bound (mode-dependent) |
 | Note 0x21 | BJ Encoder Push | Script-bound (cycle BJ size) |
 | Note 0x30 | Shift | Script-bound |
-| CC 0x00 | Rate MSB | `rate` (14-bit with CC 0x20) |
-| CC 0x01 | Position MSB | Script-bound (seek) |
+| CC 0x00 | Rate MSB | `rate` (7-bit, soft takeover) |
+| CC 0x01 | Position | `playposition` (7-bit, soft takeover) |
 | CC 0x02 | Scrub Joystick | Script-bound (variable-speed scrub) |
 | CC 0x10 | BeatJump Encoder | Script-bound (relative) |
 | CC 0x11 | Loop Encoder | Script-bound (relative) |
-| CC 0x20 | Rate LSB | `rate` (14-bit pair) |
-| CC 0x21 | Position LSB | Script-bound |
+| CC 0x20 | Rate LSB | `rate` (14-bit pair — unused, kept for compatibility) |
+| CC 0x21 | (unused) | — |
 
 **Mixer MIDI (channel 5):**
 
@@ -1602,18 +1446,17 @@ MIDI CC/Note assignments are chosen so most controls map directly in XML without
 - Beat jump encoder: normal → jump fwd/back; shift+turn → halve/double jump size
 - Loop encoder: rotate → halve/double loop size
 - Hotcue/Roll button mode switching (reads hardware toggle state via CC)
-- Position fader 14-bit seeking
 - Joystick variable-speed scrub (dead zone, proportional speed, shift multiplier)
 - 7-segment display value updates (via MIDI CC output)
 - FX focus cycling
 - Sampler trigger logic
 - Shift state management
+- Register soft takeover for `rate` and `playposition` on all decks
 
 ### 14.3 Output Mapping
 
 XML outputs send control values back to firmware for:
 - LED states (play, cue, sync, keylock, quantize, loop, PFL, FX assign, FX enable, hotcue, sampler)
-- Motor targets (rate, playposition — 7-bit CC, firmware interpolates)
 - 7-segment display data (beatjump_size and loop size via CC to firmware)
 
 ---
@@ -1621,8 +1464,7 @@ XML outputs send control values back to firmware for:
 ## 15. Open Questions & Future Work
 
 ### Resolved in v0.3
-- [x] Motorized fader touch detection → back-EMF + position monitoring (no cap sensor)
-- [x] BPM fader size → 100mm (same as position, sourced from Alibaba)
+- [x] BPM fader size → 100mm (same as position)
 - [x] Hotcue/roll dual mode → hardware toggle switch per deck
 - [x] Single vs dual MCU → single Teensy 4.1 (composite MIDI + Audio)
 - [x] USB Audio on RP2040 → no longer relevant; Teensy Audio Library handles it natively
@@ -1631,11 +1473,14 @@ XML outputs send control values back to firmware for:
 
 ### Open
 - [ ] **Touch strip**: SoftPot (resistive) vs capacitive (Azoteq IQS5xx)? → **Resolved in v0.4: replaced with 1-axis spring-return analog joysticks.** Joystick left/right controls variable-speed track scrubbing; dead zone around center prevents drift. Cost savings ~$18 vs SoftPot strips.
-- [ ] **Back-EMF measurement**: Needs testing to validate fader detection threshold.
 - [ ] **7-segment display update**: Best way to send display data from Mixxx? CC output, or firmware-side calculation from beatjump_size/loop values?
-- [ ] **Power budget**: 8 motors + 2 DACs + HP amp. Need to verify USB-C 5V/3A is sufficient. Single MCU helps (no hub overhead).
 - [ ] **Teensy USB Audio latency**: Test round-trip latency with Mixxx. Teensy Audio Library defaults to 128-sample blocks (~2.9ms at 44.1kHz).
 - [ ] **I2S2 pin conflict resolution**: ~~Verify that the pin assignments in Section 11 work with Teensy's pin mux for SAI2 + MUX address lines.~~ → **Resolved in v0.4.** MUX address lines are on pins 2, 5, 6, 8; I2S2 is on pins 3, 4, 32. No conflicts.
+- [ ] **Soft takeover feel**: Validate that Mixxx's built-in soft takeover for `rate` and `playposition` provides adequate feel during play vs paused state.
+
+### Resolved in v0.5
+- [x] Motorized faders removed due to supply issues → standard 100mm B10K slide pots with Mixxx soft takeover for `rate` and `playposition`
+- [x] Removed ADS1115, PCA9685, DRV8833, IRF9540; faders now read through existing MUX network
 
 ### Future (V2+)
 - [ ] OLED screens for track info
@@ -1650,4 +1495,4 @@ XML outputs send control values back to firmware for:
 
 ---
 
-*BrevvDeck Design Document v0.4 — Fixed pin conflicts (3× MUX, zero ADC overlap), replaced touch strips with 1-axis scrub joysticks.*
+*BrevvDeck Design Document v0.5 — Replaced motorized faders with standard slide pots; soft takeover for rate and playposition via Mixxx XML mapping.*

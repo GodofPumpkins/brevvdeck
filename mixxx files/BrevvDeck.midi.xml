@@ -3,9 +3,9 @@
     <info>
         <name>BrevvDeck</name>
         <author>Custom</author>
-        <description>Custom 4-deck DJ controller with motorized faders, beat-jump encoders,
-            scrub joysticks, 7-segment displays, sampler triggers, slip-roll mode,
-            and 2 assignable FX units. No jog wheels.</description>
+        <description>Custom 4-deck DJ controller with beat-jump encoders, scrub joysticks,
+            7-segment displays, sampler triggers, slip-roll mode, and 2 assignable FX units.
+            No jog wheels. Rate and playback-position faders use soft takeover.</description>
         <forums />
         <wiki />
         <devices>
@@ -40,12 +40,12 @@
 
                 CC ASSIGNMENT (per deck channel):
                   0x00 = Rate/BPM fader MSB (14-bit)
-                  0x01 = Position fader MSB (14-bit) [script-bound]
+                  0x01 = Position fader [soft-takeover → playposition]
                   0x02 = Scrub joystick [script-bound]
                   0x10 = Beat jump encoder (relative, center=0x40)
                   0x11 = Loop encoder (relative, center=0x40)
                   0x20 = Rate/BPM fader LSB (14-bit)
-                  0x21 = Position fader LSB (14-bit)
+                  0x21 = (unused)
 
                 CC ASSIGNMENT (Mixer, Ch 5 / 0x_4):
                   0x00-0x03 = Volume Ch 1-4
@@ -306,25 +306,15 @@
                 </options>
             </control>
 
-            <!-- Position fader 14-bit (script-bound for seeking) -->
+            <!-- Position fader (soft takeover) -->
             <control>
                 <group>[Channel1]</group>
-                <key>BrevvDeck.playpositionFader</key>
-                <description>Deck 1 Position Fader MSB</description>
+                <key>playposition</key>
+                <description>Deck 1 Position Fader</description>
                 <status>0xB0</status>
                 <midino>0x01</midino>
                 <options>
-                    <script-binding />
-                </options>
-            </control>
-            <control>
-                <group>[Channel1]</group>
-                <key>BrevvDeck.playpositionFaderLSB</key>
-                <description>Deck 1 Position Fader LSB</description>
-                <status>0xB0</status>
-                <midino>0x21</midino>
-                <options>
-                    <script-binding />
+                    <soft-takeover />
                 </options>
             </control>
 
@@ -579,24 +569,15 @@
                     <soft-takeover />
                 </options>
             </control>
+            <!-- Position fader (soft takeover) -->
             <control>
                 <group>[Channel2]</group>
-                <key>BrevvDeck.playpositionFader</key>
-                <description>Deck 2 Position Fader MSB</description>
+                <key>playposition</key>
+                <description>Deck 2 Position Fader</description>
                 <status>0xB1</status>
                 <midino>0x01</midino>
                 <options>
-                    <script-binding />
-                </options>
-            </control>
-            <control>
-                <group>[Channel2]</group>
-                <key>BrevvDeck.playpositionFaderLSB</key>
-                <description>Deck 2 Position Fader LSB</description>
-                <status>0xB1</status>
-                <midino>0x21</midino>
-                <options>
-                    <script-binding />
+                    <soft-takeover />
                 </options>
             </control>
             <control>
@@ -845,24 +826,15 @@
                     <soft-takeover />
                 </options>
             </control>
+            <!-- Position fader (soft takeover) -->
             <control>
                 <group>[Channel3]</group>
-                <key>BrevvDeck.playpositionFader</key>
-                <description>Deck 3 Position Fader MSB</description>
+                <key>playposition</key>
+                <description>Deck 3 Position Fader</description>
                 <status>0xB2</status>
                 <midino>0x01</midino>
                 <options>
-                    <script-binding />
-                </options>
-            </control>
-            <control>
-                <group>[Channel3]</group>
-                <key>BrevvDeck.playpositionFaderLSB</key>
-                <description>Deck 3 Position Fader LSB</description>
-                <status>0xB2</status>
-                <midino>0x21</midino>
-                <options>
-                    <script-binding />
+                    <soft-takeover />
                 </options>
             </control>
             <control>
@@ -1111,24 +1083,15 @@
                     <soft-takeover />
                 </options>
             </control>
+            <!-- Position fader (soft takeover) -->
             <control>
                 <group>[Channel4]</group>
-                <key>BrevvDeck.playpositionFader</key>
-                <description>Deck 4 Position Fader MSB</description>
+                <key>playposition</key>
+                <description>Deck 4 Position Fader</description>
                 <status>0xB3</status>
                 <midino>0x01</midino>
                 <options>
-                    <script-binding />
-                </options>
-            </control>
-            <control>
-                <group>[Channel4]</group>
-                <key>BrevvDeck.playpositionFaderLSB</key>
-                <description>Deck 4 Position Fader LSB</description>
-                <status>0xB3</status>
-                <midino>0x21</midino>
-                <options>
-                    <script-binding />
+                    <soft-takeover />
                 </options>
             </control>
             <control>
@@ -2055,20 +2018,6 @@
                 <off>0x00</off>
                 <minimum>0.5</minimum>
             </output>
-            <!-- Motor targets -->
-            <output>
-                <group>[Channel1]</group>
-                <key>rate</key>
-                <status>0xB0</status>
-                <midino>0x00</midino>
-            </output>
-            <output>
-                <group>[Channel1]</group>
-                <key>playposition</key>
-                <status>0xB0</status>
-                <midino>0x01</midino>
-            </output>
-
             <!-- Deck 2 LEDs -->
             <output>
                 <group>[Channel2]</group>
@@ -2196,19 +2145,6 @@
                 <off>0x00</off>
                 <minimum>0.5</minimum>
             </output>
-            <output>
-                <group>[Channel2]</group>
-                <key>rate</key>
-                <status>0xB1</status>
-                <midino>0x00</midino>
-            </output>
-            <output>
-                <group>[Channel2]</group>
-                <key>playposition</key>
-                <status>0xB1</status>
-                <midino>0x01</midino>
-            </output>
-
             <!-- Deck 3 LEDs -->
             <output>
                 <group>[Channel3]</group>
@@ -2336,19 +2272,6 @@
                 <off>0x00</off>
                 <minimum>0.5</minimum>
             </output>
-            <output>
-                <group>[Channel3]</group>
-                <key>rate</key>
-                <status>0xB2</status>
-                <midino>0x00</midino>
-            </output>
-            <output>
-                <group>[Channel3]</group>
-                <key>playposition</key>
-                <status>0xB2</status>
-                <midino>0x01</midino>
-            </output>
-
             <!-- Deck 4 LEDs -->
             <output>
                 <group>[Channel4]</group>
@@ -2476,19 +2399,6 @@
                 <off>0x00</off>
                 <minimum>0.5</minimum>
             </output>
-            <output>
-                <group>[Channel4]</group>
-                <key>rate</key>
-                <status>0xB3</status>
-                <midino>0x00</midino>
-            </output>
-            <output>
-                <group>[Channel4]</group>
-                <key>playposition</key>
-                <status>0xB3</status>
-                <midino>0x01</midino>
-            </output>
-
             <!-- ==================== MIXER OUTPUT ==================== -->
 
             <!-- PFL LEDs -->
