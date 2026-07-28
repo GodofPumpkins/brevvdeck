@@ -1,0 +1,2709 @@
+<?xml version='1.0' encoding='utf-8'?>
+<MixxxControllerPreset mixxxVersion="2.4.0" schemaVersion="1">
+    <info>
+        <name>BrevvDeck</name>
+        <author>Custom</author>
+        <description>Custom 4-deck DJ controller with motorized faders, beat-jump encoders,
+            scrub joysticks, 7-segment displays, sampler triggers, slip-roll mode,
+            and 2 assignable FX units. No jog wheels.</description>
+        <forums />
+        <wiki />
+        <devices>
+            <product protocol="midi" vendor_id="" product_id="" />
+        </devices>
+    </info>
+
+    <controller id="BrevvDeck MIDI">
+        <scriptfiles>
+            <file filename="midi-components-0.0.js" />
+            <file functionprefix="BrevvDeck" filename="BrevvDeck-scripts.js" />
+        </scriptfiles>
+
+        <controls>
+            <!--
+                ============================================================
+                MIDI CHANNEL ASSIGNMENT:
+                  Ch 1 (0x_0) = Deck 1    Ch 5 (0x_4) = Mixer
+                  Ch 2 (0x_1) = Deck 2    Ch 6 (0x_5) = FX Unit 1
+                  Ch 3 (0x_2) = Deck 3    Ch 7 (0x_6) = FX Unit 2
+                  Ch 4 (0x_3) = Deck 4    Ch 8 (0x_7) = Library / Global / Sampler
+
+                NOTE NUMBER ASSIGNMENT (per deck channel):
+                  0x00 = Play/Pause        0x04 = Quantize
+                  0x01 = Cue               0x05 = Loop In
+                  0x02 = Sync              0x06 = Loop Out
+                  0x03 = Keylock           0x07 = Loop Deactivate (reloop_toggle)
+                  0x10-0x17 = Hotcue/Roll 1-8 (script-bound, mode-dependent)
+                  0x20 = Loop encoder push (reloop_toggle)
+                  0x21 = Beat jump encoder push (cycle size)
+                  0x30 = Shift
+
+                CC ASSIGNMENT (per deck channel):
+                  0x00 = Rate/BPM fader MSB (14-bit)
+                  0x01 = Position fader MSB (14-bit) [script-bound]
+                  0x02 = Scrub joystick [script-bound]
+                  0x10 = Beat jump encoder (relative, center=0x40)
+                  0x11 = Loop encoder (relative, center=0x40)
+                  0x20 = Rate/BPM fader LSB (14-bit)
+                  0x21 = Position fader LSB (14-bit)
+
+                CC ASSIGNMENT (Mixer, Ch 5 / 0x_4):
+                  0x00-0x03 = Volume Ch 1-4
+                  0x04-0x07 = EQ High Ch 1-4
+                  0x08-0x0B = EQ Mid Ch 1-4
+                  0x0C-0x0F = EQ Low Ch 1-4
+                  0x10-0x13 = Quick FX Ch 1-4
+                  0x14 = Headphone mix       0x15 = Headphone volume
+                  0x16 = Master volume       0x17 = Crossfader
+                  0x18-0x1B = Gain (pregain) Ch 1-4
+
+                NOTE ASSIGNMENT (Mixer, Ch 5 / 0x_4):
+                  0x00-0x03 = PFL/Cue Ch 1-4
+                  0x04-0x07 = FX1 Assign Ch 1-4
+                  0x08-0x0B = FX2 Assign Ch 1-4
+                  0x0C-0x0F = Load Track Ch 1-4
+
+                CC ASSIGNMENT (FX, Ch 6-7):
+                  0x00-0x02 = Effect 1-3 meta knobs
+                  0x03 = Dry/Wet mix
+
+                NOTE ASSIGNMENT (FX, Ch 6-7):
+                  0x00-0x02 = Effect 1-3 enable
+                  0x03 = Effect select/focus
+
+                Library/Global (Ch 8):
+                  CC 0x00 = Browse encoder (relative)
+                  Note 0x00 = Browse push (GoToItem)
+                  Note 0x01 = Library fullscreen
+                  Note 0x02 = Back
+                  Note 0x03 = Preview
+                  Note 0x10 = Shift Left
+                  Note 0x11 = Shift Right
+                  Note 0x14-0x17 = Sampler 1-4 (script-bound)
+                ============================================================
+            -->
+
+            <!-- ==================== DECK 1 (MIDI Ch 1 = 0x90/0xB0) ==================== -->
+
+            <control>
+                <group>[Channel1]</group>
+                <key>play</key>
+                <description>Deck 1 Play/Pause</description>
+                <status>0x90</status>
+                <midino>0x00</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>cue_default</key>
+                <description>Deck 1 Cue</description>
+                <status>0x90</status>
+                <midino>0x01</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>sync_enabled</key>
+                <description>Deck 1 Sync</description>
+                <status>0x90</status>
+                <midino>0x02</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>keylock</key>
+                <description>Deck 1 Keylock</description>
+                <status>0x90</status>
+                <midino>0x03</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>quantize</key>
+                <description>Deck 1 Quantize</description>
+                <status>0x90</status>
+                <midino>0x04</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>loop_in</key>
+                <description>Deck 1 Loop In</description>
+                <status>0x90</status>
+                <midino>0x05</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>loop_out</key>
+                <description>Deck 1 Loop Out</description>
+                <status>0x90</status>
+                <midino>0x06</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>reloop_toggle</key>
+                <description>Deck 1 Loop Deactivate</description>
+                <status>0x90</status>
+                <midino>0x07</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- Hotcue/Roll 1-8 (script-bound: mode-dependent via hardware toggle) -->
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 1 Hotcue/Roll 1</description>
+                <status>0x90</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 1 Hotcue/Roll 2</description>
+                <status>0x90</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 1 Hotcue/Roll 3</description>
+                <status>0x90</status>
+                <midino>0x12</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 1 Hotcue/Roll 4</description>
+                <status>0x90</status>
+                <midino>0x13</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 1 Hotcue/Roll 5</description>
+                <status>0x90</status>
+                <midino>0x14</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 1 Hotcue/Roll 6</description>
+                <status>0x90</status>
+                <midino>0x15</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 1 Hotcue/Roll 7</description>
+                <status>0x90</status>
+                <midino>0x16</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 1 Hotcue/Roll 8</description>
+                <status>0x90</status>
+                <midino>0x17</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Loop encoder push = reloop_toggle -->
+            <control>
+                <group>[Channel1]</group>
+                <key>reloop_toggle</key>
+                <description>Deck 1 Loop Encoder Push</description>
+                <status>0x90</status>
+                <midino>0x20</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- Beat jump encoder push = cycle jump size (script) -->
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.beatJumpSizeCycle</key>
+                <description>Deck 1 Beat Jump Size Cycle</description>
+                <status>0x90</status>
+                <midino>0x21</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Shift (per-deck) -->
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.shift</key>
+                <description>Deck 1 Shift</description>
+                <status>0x90</status>
+                <midino>0x30</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Rate fader 14-bit (MSB = CC 0x00, LSB = CC 0x20) -->
+            <control>
+                <group>[Channel1]</group>
+                <key>rate</key>
+                <description>Deck 1 Rate Fader MSB</description>
+                <status>0xB0</status>
+                <midino>0x00</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>rate</key>
+                <description>Deck 1 Rate Fader LSB</description>
+                <status>0xB0</status>
+                <midino>0x20</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <!-- Position fader 14-bit (script-bound for seeking) -->
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.playpositionFader</key>
+                <description>Deck 1 Position Fader MSB</description>
+                <status>0xB0</status>
+                <midino>0x01</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.playpositionFaderLSB</key>
+                <description>Deck 1 Position Fader LSB</description>
+                <status>0xB0</status>
+                <midino>0x21</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Scrub joystick -->
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.joystickScrub</key>
+                <description>Deck 1 Scrub Joystick</description>
+                <status>0xB0</status>
+                <midino>0x02</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Beat jump encoder (relative) -->
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.beatJumpEncoder</key>
+                <description>Deck 1 Beat Jump Encoder</description>
+                <status>0xB0</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Loop encoder (relative) -->
+            <control>
+                <group>[Channel1]</group>
+                <key>BrevvDeck.loopEncoder</key>
+                <description>Deck 1 Loop Encoder</description>
+                <status>0xB0</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- ==================== DECK 2 (MIDI Ch 2 = 0x91/0xB1) ==================== -->
+
+            <control>
+                <group>[Channel2]</group>
+                <key>play</key>
+                <description>Deck 2 Play/Pause</description>
+                <status>0x91</status>
+                <midino>0x00</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>cue_default</key>
+                <description>Deck 2 Cue</description>
+                <status>0x91</status>
+                <midino>0x01</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>sync_enabled</key>
+                <description>Deck 2 Sync</description>
+                <status>0x91</status>
+                <midino>0x02</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>keylock</key>
+                <description>Deck 2 Keylock</description>
+                <status>0x91</status>
+                <midino>0x03</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>quantize</key>
+                <description>Deck 2 Quantize</description>
+                <status>0x91</status>
+                <midino>0x04</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>loop_in</key>
+                <description>Deck 2 Loop In</description>
+                <status>0x91</status>
+                <midino>0x05</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>loop_out</key>
+                <description>Deck 2 Loop Out</description>
+                <status>0x91</status>
+                <midino>0x06</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>reloop_toggle</key>
+                <description>Deck 2 Loop Deactivate</description>
+                <status>0x91</status>
+                <midino>0x07</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 2 Hotcue/Roll 1</description>
+                <status>0x91</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 2 Hotcue/Roll 2</description>
+                <status>0x91</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 2 Hotcue/Roll 3</description>
+                <status>0x91</status>
+                <midino>0x12</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 2 Hotcue/Roll 4</description>
+                <status>0x91</status>
+                <midino>0x13</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 2 Hotcue/Roll 5</description>
+                <status>0x91</status>
+                <midino>0x14</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 2 Hotcue/Roll 6</description>
+                <status>0x91</status>
+                <midino>0x15</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 2 Hotcue/Roll 7</description>
+                <status>0x91</status>
+                <midino>0x16</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 2 Hotcue/Roll 8</description>
+                <status>0x91</status>
+                <midino>0x17</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel2]</group>
+                <key>reloop_toggle</key>
+                <description>Deck 2 Loop Encoder Push</description>
+                <status>0x91</status>
+                <midino>0x20</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.beatJumpSizeCycle</key>
+                <description>Deck 2 Beat Jump Size Cycle</description>
+                <status>0x91</status>
+                <midino>0x21</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.shift</key>
+                <description>Deck 2 Shift</description>
+                <status>0x91</status>
+                <midino>0x30</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel2]</group>
+                <key>rate</key>
+                <description>Deck 2 Rate Fader MSB</description>
+                <status>0xB1</status>
+                <midino>0x00</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>rate</key>
+                <description>Deck 2 Rate Fader LSB</description>
+                <status>0xB1</status>
+                <midino>0x20</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.playpositionFader</key>
+                <description>Deck 2 Position Fader MSB</description>
+                <status>0xB1</status>
+                <midino>0x01</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.playpositionFaderLSB</key>
+                <description>Deck 2 Position Fader LSB</description>
+                <status>0xB1</status>
+                <midino>0x21</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.joystickScrub</key>
+                <description>Deck 2 Scrub Joystick</description>
+                <status>0xB1</status>
+                <midino>0x02</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.beatJumpEncoder</key>
+                <description>Deck 2 Beat Jump Encoder</description>
+                <status>0xB1</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>BrevvDeck.loopEncoder</key>
+                <description>Deck 2 Loop Encoder</description>
+                <status>0xB1</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- ==================== DECK 3 (MIDI Ch 3 = 0x92/0xB2) ==================== -->
+
+            <control>
+                <group>[Channel3]</group>
+                <key>play</key>
+                <description>Deck 3 Play/Pause</description>
+                <status>0x92</status>
+                <midino>0x00</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>cue_default</key>
+                <description>Deck 3 Cue</description>
+                <status>0x92</status>
+                <midino>0x01</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>sync_enabled</key>
+                <description>Deck 3 Sync</description>
+                <status>0x92</status>
+                <midino>0x02</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>keylock</key>
+                <description>Deck 3 Keylock</description>
+                <status>0x92</status>
+                <midino>0x03</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>quantize</key>
+                <description>Deck 3 Quantize</description>
+                <status>0x92</status>
+                <midino>0x04</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>loop_in</key>
+                <description>Deck 3 Loop In</description>
+                <status>0x92</status>
+                <midino>0x05</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>loop_out</key>
+                <description>Deck 3 Loop Out</description>
+                <status>0x92</status>
+                <midino>0x06</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>reloop_toggle</key>
+                <description>Deck 3 Loop Deactivate</description>
+                <status>0x92</status>
+                <midino>0x07</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 3 Hotcue/Roll 1</description>
+                <status>0x92</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 3 Hotcue/Roll 2</description>
+                <status>0x92</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 3 Hotcue/Roll 3</description>
+                <status>0x92</status>
+                <midino>0x12</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 3 Hotcue/Roll 4</description>
+                <status>0x92</status>
+                <midino>0x13</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 3 Hotcue/Roll 5</description>
+                <status>0x92</status>
+                <midino>0x14</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 3 Hotcue/Roll 6</description>
+                <status>0x92</status>
+                <midino>0x15</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 3 Hotcue/Roll 7</description>
+                <status>0x92</status>
+                <midino>0x16</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 3 Hotcue/Roll 8</description>
+                <status>0x92</status>
+                <midino>0x17</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel3]</group>
+                <key>reloop_toggle</key>
+                <description>Deck 3 Loop Encoder Push</description>
+                <status>0x92</status>
+                <midino>0x20</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.beatJumpSizeCycle</key>
+                <description>Deck 3 Beat Jump Size Cycle</description>
+                <status>0x92</status>
+                <midino>0x21</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.shift</key>
+                <description>Deck 3 Shift</description>
+                <status>0x92</status>
+                <midino>0x30</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel3]</group>
+                <key>rate</key>
+                <description>Deck 3 Rate Fader MSB</description>
+                <status>0xB2</status>
+                <midino>0x00</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>rate</key>
+                <description>Deck 3 Rate Fader LSB</description>
+                <status>0xB2</status>
+                <midino>0x20</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.playpositionFader</key>
+                <description>Deck 3 Position Fader MSB</description>
+                <status>0xB2</status>
+                <midino>0x01</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.playpositionFaderLSB</key>
+                <description>Deck 3 Position Fader LSB</description>
+                <status>0xB2</status>
+                <midino>0x21</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.joystickScrub</key>
+                <description>Deck 3 Scrub Joystick</description>
+                <status>0xB2</status>
+                <midino>0x02</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.beatJumpEncoder</key>
+                <description>Deck 3 Beat Jump Encoder</description>
+                <status>0xB2</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>BrevvDeck.loopEncoder</key>
+                <description>Deck 3 Loop Encoder</description>
+                <status>0xB2</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- ==================== DECK 4 (MIDI Ch 4 = 0x93/0xB3) ==================== -->
+
+            <control>
+                <group>[Channel4]</group>
+                <key>play</key>
+                <description>Deck 4 Play/Pause</description>
+                <status>0x93</status>
+                <midino>0x00</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>cue_default</key>
+                <description>Deck 4 Cue</description>
+                <status>0x93</status>
+                <midino>0x01</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>sync_enabled</key>
+                <description>Deck 4 Sync</description>
+                <status>0x93</status>
+                <midino>0x02</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>keylock</key>
+                <description>Deck 4 Keylock</description>
+                <status>0x93</status>
+                <midino>0x03</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>quantize</key>
+                <description>Deck 4 Quantize</description>
+                <status>0x93</status>
+                <midino>0x04</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>loop_in</key>
+                <description>Deck 4 Loop In</description>
+                <status>0x93</status>
+                <midino>0x05</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>loop_out</key>
+                <description>Deck 4 Loop Out</description>
+                <status>0x93</status>
+                <midino>0x06</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>reloop_toggle</key>
+                <description>Deck 4 Loop Deactivate</description>
+                <status>0x93</status>
+                <midino>0x07</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 4 Hotcue/Roll 1</description>
+                <status>0x93</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 4 Hotcue/Roll 2</description>
+                <status>0x93</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 4 Hotcue/Roll 3</description>
+                <status>0x93</status>
+                <midino>0x12</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 4 Hotcue/Roll 4</description>
+                <status>0x93</status>
+                <midino>0x13</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 4 Hotcue/Roll 5</description>
+                <status>0x93</status>
+                <midino>0x14</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 4 Hotcue/Roll 6</description>
+                <status>0x93</status>
+                <midino>0x15</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 4 Hotcue/Roll 7</description>
+                <status>0x93</status>
+                <midino>0x16</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.hotcueRollButton</key>
+                <description>Deck 4 Hotcue/Roll 8</description>
+                <status>0x93</status>
+                <midino>0x17</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel4]</group>
+                <key>reloop_toggle</key>
+                <description>Deck 4 Loop Encoder Push</description>
+                <status>0x93</status>
+                <midino>0x20</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.beatJumpSizeCycle</key>
+                <description>Deck 4 Beat Jump Size Cycle</description>
+                <status>0x93</status>
+                <midino>0x21</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.shift</key>
+                <description>Deck 4 Shift</description>
+                <status>0x93</status>
+                <midino>0x30</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <control>
+                <group>[Channel4]</group>
+                <key>rate</key>
+                <description>Deck 4 Rate Fader MSB</description>
+                <status>0xB3</status>
+                <midino>0x00</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>rate</key>
+                <description>Deck 4 Rate Fader LSB</description>
+                <status>0xB3</status>
+                <midino>0x20</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.playpositionFader</key>
+                <description>Deck 4 Position Fader MSB</description>
+                <status>0xB3</status>
+                <midino>0x01</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.playpositionFaderLSB</key>
+                <description>Deck 4 Position Fader LSB</description>
+                <status>0xB3</status>
+                <midino>0x21</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.joystickScrub</key>
+                <description>Deck 4 Scrub Joystick</description>
+                <status>0xB3</status>
+                <midino>0x02</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.beatJumpEncoder</key>
+                <description>Deck 4 Beat Jump Encoder</description>
+                <status>0xB3</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>BrevvDeck.loopEncoder</key>
+                <description>Deck 4 Loop Encoder</description>
+                <status>0xB3</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- ==================== MIXER (MIDI Ch 5 = 0x94/0xB4) ==================== -->
+
+            <!-- Volume faders Ch 1-4 -->
+            <control>
+                <group>[Channel1]</group>
+                <key>volume</key>
+                <description>Mixer Volume Ch1</description>
+                <status>0xB4</status>
+                <midino>0x00</midino>
+                <options>
+                    <normal />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>volume</key>
+                <description>Mixer Volume Ch2</description>
+                <status>0xB4</status>
+                <midino>0x01</midino>
+                <options>
+                    <normal />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>volume</key>
+                <description>Mixer Volume Ch3</description>
+                <status>0xB4</status>
+                <midino>0x02</midino>
+                <options>
+                    <normal />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>volume</key>
+                <description>Mixer Volume Ch4</description>
+                <status>0xB4</status>
+                <midino>0x03</midino>
+                <options>
+                    <normal />
+                </options>
+            </control>
+
+            <!-- EQ High Ch 1-4 -->
+            <control>
+                <group>[EqualizerRack1_[Channel1]_Effect1]</group>
+                <key>parameter3</key>
+                <description>EQ High Ch1</description>
+                <status>0xB4</status>
+                <midino>0x04</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel2]_Effect1]</group>
+                <key>parameter3</key>
+                <description>EQ High Ch2</description>
+                <status>0xB4</status>
+                <midino>0x05</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel3]_Effect1]</group>
+                <key>parameter3</key>
+                <description>EQ High Ch3</description>
+                <status>0xB4</status>
+                <midino>0x06</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel4]_Effect1]</group>
+                <key>parameter3</key>
+                <description>EQ High Ch4</description>
+                <status>0xB4</status>
+                <midino>0x07</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <!-- EQ Mid Ch 1-4 -->
+            <control>
+                <group>[EqualizerRack1_[Channel1]_Effect1]</group>
+                <key>parameter2</key>
+                <description>EQ Mid Ch1</description>
+                <status>0xB4</status>
+                <midino>0x08</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel2]_Effect1]</group>
+                <key>parameter2</key>
+                <description>EQ Mid Ch2</description>
+                <status>0xB4</status>
+                <midino>0x09</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel3]_Effect1]</group>
+                <key>parameter2</key>
+                <description>EQ Mid Ch3</description>
+                <status>0xB4</status>
+                <midino>0x0A</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel4]_Effect1]</group>
+                <key>parameter2</key>
+                <description>EQ Mid Ch4</description>
+                <status>0xB4</status>
+                <midino>0x0B</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <!-- EQ Low Ch 1-4 -->
+            <control>
+                <group>[EqualizerRack1_[Channel1]_Effect1]</group>
+                <key>parameter1</key>
+                <description>EQ Low Ch1</description>
+                <status>0xB4</status>
+                <midino>0x0C</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel2]_Effect1]</group>
+                <key>parameter1</key>
+                <description>EQ Low Ch2</description>
+                <status>0xB4</status>
+                <midino>0x0D</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel3]_Effect1]</group>
+                <key>parameter1</key>
+                <description>EQ Low Ch3</description>
+                <status>0xB4</status>
+                <midino>0x0E</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel4]_Effect1]</group>
+                <key>parameter1</key>
+                <description>EQ Low Ch4</description>
+                <status>0xB4</status>
+                <midino>0x0F</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <!-- Quick FX Ch 1-4 -->
+            <control>
+                <group>[QuickEffectRack1_[Channel1]]</group>
+                <key>super1</key>
+                <description>Quick FX Ch1</description>
+                <status>0xB4</status>
+                <midino>0x10</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[QuickEffectRack1_[Channel2]]</group>
+                <key>super1</key>
+                <description>Quick FX Ch2</description>
+                <status>0xB4</status>
+                <midino>0x11</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[QuickEffectRack1_[Channel3]]</group>
+                <key>super1</key>
+                <description>Quick FX Ch3</description>
+                <status>0xB4</status>
+                <midino>0x12</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[QuickEffectRack1_[Channel4]]</group>
+                <key>super1</key>
+                <description>Quick FX Ch4</description>
+                <status>0xB4</status>
+                <midino>0x13</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <!-- Headphone Mix / Volume / Master / Crossfader -->
+            <control>
+                <group>[Master]</group>
+                <key>headMix</key>
+                <description>Headphone Mix</description>
+                <status>0xB4</status>
+                <midino>0x14</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Master]</group>
+                <key>headVolume</key>
+                <description>Headphone Volume</description>
+                <status>0xB4</status>
+                <midino>0x15</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Master]</group>
+                <key>volume</key>
+                <description>Master Volume</description>
+                <status>0xB4</status>
+                <midino>0x16</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Master]</group>
+                <key>crossfader</key>
+                <description>Crossfader</description>
+                <status>0xB4</status>
+                <midino>0x17</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <!-- Gain (pregain) Ch 1-4 -->
+            <control>
+                <group>[Channel1]</group>
+                <key>pregain</key>
+                <description>Gain Ch1</description>
+                <status>0xB4</status>
+                <midino>0x18</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>pregain</key>
+                <description>Gain Ch2</description>
+                <status>0xB4</status>
+                <midino>0x19</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>pregain</key>
+                <description>Gain Ch3</description>
+                <status>0xB4</status>
+                <midino>0x1A</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>pregain</key>
+                <description>Gain Ch4</description>
+                <status>0xB4</status>
+                <midino>0x1B</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <!-- PFL buttons Ch 1-4 -->
+            <control>
+                <group>[Channel1]</group>
+                <key>pfl</key>
+                <description>PFL Ch1</description>
+                <status>0x94</status>
+                <midino>0x00</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>pfl</key>
+                <description>PFL Ch2</description>
+                <status>0x94</status>
+                <midino>0x01</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>pfl</key>
+                <description>PFL Ch3</description>
+                <status>0x94</status>
+                <midino>0x02</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>pfl</key>
+                <description>PFL Ch4</description>
+                <status>0x94</status>
+                <midino>0x03</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- FX1 Assign Ch 1-4 -->
+            <control>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>group_[Channel1]_enable</key>
+                <description>FX1 Assign Ch1</description>
+                <status>0x94</status>
+                <midino>0x04</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>group_[Channel2]_enable</key>
+                <description>FX1 Assign Ch2</description>
+                <status>0x94</status>
+                <midino>0x05</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>group_[Channel3]_enable</key>
+                <description>FX1 Assign Ch3</description>
+                <status>0x94</status>
+                <midino>0x06</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>group_[Channel4]_enable</key>
+                <description>FX1 Assign Ch4</description>
+                <status>0x94</status>
+                <midino>0x07</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- FX2 Assign Ch 1-4 -->
+            <control>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>group_[Channel1]_enable</key>
+                <description>FX2 Assign Ch1</description>
+                <status>0x94</status>
+                <midino>0x08</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>group_[Channel2]_enable</key>
+                <description>FX2 Assign Ch2</description>
+                <status>0x94</status>
+                <midino>0x09</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>group_[Channel3]_enable</key>
+                <description>FX2 Assign Ch3</description>
+                <status>0x94</status>
+                <midino>0x0A</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>group_[Channel4]_enable</key>
+                <description>FX2 Assign Ch4</description>
+                <status>0x94</status>
+                <midino>0x0B</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- Load Track Ch 1-4 -->
+            <control>
+                <group>[Channel1]</group>
+                <key>LoadSelectedTrack</key>
+                <description>Load Track Ch1</description>
+                <status>0x94</status>
+                <midino>0x0C</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>LoadSelectedTrack</key>
+                <description>Load Track Ch2</description>
+                <status>0x94</status>
+                <midino>0x0D</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel3]</group>
+                <key>LoadSelectedTrack</key>
+                <description>Load Track Ch3</description>
+                <status>0x94</status>
+                <midino>0x0E</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[Channel4]</group>
+                <key>LoadSelectedTrack</key>
+                <description>Load Track Ch4</description>
+                <status>0x94</status>
+                <midino>0x0F</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- ==================== FX UNIT 1 (MIDI Ch 6 = 0x95/0xB5) ==================== -->
+
+            <control>
+                <group>[EffectRack1_EffectUnit1_Effect1]</group>
+                <key>meta</key>
+                <description>FX1 Effect 1 Knob</description>
+                <status>0xB5</status>
+                <midino>0x00</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1_Effect2]</group>
+                <key>meta</key>
+                <description>FX1 Effect 2 Knob</description>
+                <status>0xB5</status>
+                <midino>0x01</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1_Effect3]</group>
+                <key>meta</key>
+                <description>FX1 Effect 3 Knob</description>
+                <status>0xB5</status>
+                <midino>0x02</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>mix</key>
+                <description>FX1 Dry/Wet</description>
+                <status>0xB5</status>
+                <midino>0x03</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <control>
+                <group>[EffectRack1_EffectUnit1_Effect1]</group>
+                <key>enabled</key>
+                <description>FX1 Effect 1 Enable</description>
+                <status>0x95</status>
+                <midino>0x00</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1_Effect2]</group>
+                <key>enabled</key>
+                <description>FX1 Effect 2 Enable</description>
+                <status>0x95</status>
+                <midino>0x01</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1_Effect3]</group>
+                <key>enabled</key>
+                <description>FX1 Effect 3 Enable</description>
+                <status>0x95</status>
+                <midino>0x02</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>BrevvDeck.fxSelect</key>
+                <description>FX1 Select</description>
+                <status>0x95</status>
+                <midino>0x03</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- ==================== FX UNIT 2 (MIDI Ch 7 = 0x96/0xB6) ==================== -->
+
+            <control>
+                <group>[EffectRack1_EffectUnit2_Effect1]</group>
+                <key>meta</key>
+                <description>FX2 Effect 1 Knob</description>
+                <status>0xB6</status>
+                <midino>0x00</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2_Effect2]</group>
+                <key>meta</key>
+                <description>FX2 Effect 2 Knob</description>
+                <status>0xB6</status>
+                <midino>0x01</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2_Effect3]</group>
+                <key>meta</key>
+                <description>FX2 Effect 3 Knob</description>
+                <status>0xB6</status>
+                <midino>0x02</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>mix</key>
+                <description>FX2 Dry/Wet</description>
+                <status>0xB6</status>
+                <midino>0x03</midino>
+                <options>
+                    <soft-takeover />
+                </options>
+            </control>
+
+            <control>
+                <group>[EffectRack1_EffectUnit2_Effect1]</group>
+                <key>enabled</key>
+                <description>FX2 Effect 1 Enable</description>
+                <status>0x96</status>
+                <midino>0x00</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2_Effect2]</group>
+                <key>enabled</key>
+                <description>FX2 Effect 2 Enable</description>
+                <status>0x96</status>
+                <midino>0x01</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2_Effect3]</group>
+                <key>enabled</key>
+                <description>FX2 Effect 3 Enable</description>
+                <status>0x96</status>
+                <midino>0x02</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>BrevvDeck.fxSelect</key>
+                <description>FX2 Select</description>
+                <status>0x96</status>
+                <midino>0x03</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- ==================== LIBRARY / GLOBAL (MIDI Ch 8 = 0x97/0xB7) ==================== -->
+
+            <!-- Browse encoder (relative) -->
+            <control>
+                <group>[Library]</group>
+                <key>BrevvDeck.browseEncoder</key>
+                <description>Library Browse Encoder</description>
+                <status>0xB7</status>
+                <midino>0x00</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Browse push = GoToItem -->
+            <control>
+                <group>[Library]</group>
+                <key>GoToItem</key>
+                <description>Library Go To Item</description>
+                <status>0x97</status>
+                <midino>0x00</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- Library fullscreen -->
+            <control>
+                <group>[Master]</group>
+                <key>maximize_library</key>
+                <description>Library Fullscreen</description>
+                <status>0x97</status>
+                <midino>0x01</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- Back -->
+            <control>
+                <group>[Library]</group>
+                <key>MoveLeft</key>
+                <description>Library Back</description>
+                <status>0x97</status>
+                <midino>0x02</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- Preview -->
+            <control>
+                <group>[PreviewDeck1]</group>
+                <key>LoadSelectedTrackAndPlay</key>
+                <description>Preview Track</description>
+                <status>0x97</status>
+                <midino>0x03</midino>
+                <options>
+                    <button />
+                </options>
+            </control>
+
+            <!-- Global Shift Left -->
+            <control>
+                <group>[Controls]</group>
+                <key>BrevvDeck.shiftLeft</key>
+                <description>Shift Left</description>
+                <status>0x97</status>
+                <midino>0x10</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Global Shift Right -->
+            <control>
+                <group>[Controls]</group>
+                <key>BrevvDeck.shiftRight</key>
+                <description>Shift Right</description>
+                <status>0x97</status>
+                <midino>0x11</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+            <!-- Sampler 1-4 (script-bound for load/play logic) -->
+            <control>
+                <group>[Sampler1]</group>
+                <key>BrevvDeck.samplerButton</key>
+                <description>Sampler 1</description>
+                <status>0x97</status>
+                <midino>0x14</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Sampler2]</group>
+                <key>BrevvDeck.samplerButton</key>
+                <description>Sampler 2</description>
+                <status>0x97</status>
+                <midino>0x15</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Sampler3]</group>
+                <key>BrevvDeck.samplerButton</key>
+                <description>Sampler 3</description>
+                <status>0x97</status>
+                <midino>0x16</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+            <control>
+                <group>[Sampler4]</group>
+                <key>BrevvDeck.samplerButton</key>
+                <description>Sampler 4</description>
+                <status>0x97</status>
+                <midino>0x17</midino>
+                <options>
+                    <script-binding />
+                </options>
+            </control>
+
+        </controls>
+
+        <outputs>
+            <!-- ==================== DECK OUTPUT (LED + Motor) ==================== -->
+
+            <!-- Deck 1 LEDs -->
+            <output>
+                <group>[Channel1]</group>
+                <key>play_indicator</key>
+                <status>0x90</status>
+                <midino>0x00</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>cue_indicator</key>
+                <status>0x90</status>
+                <midino>0x01</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>sync_enabled</key>
+                <status>0x90</status>
+                <midino>0x02</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>keylock</key>
+                <status>0x90</status>
+                <midino>0x03</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>quantize</key>
+                <status>0x90</status>
+                <midino>0x04</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>loop_enabled</key>
+                <status>0x90</status>
+                <midino>0x07</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <!-- Hotcue enabled LEDs 1-8 -->
+            <output>
+                <group>[Channel1]</group>
+                <key>hotcue_1_enabled</key>
+                <status>0x90</status>
+                <midino>0x10</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>hotcue_2_enabled</key>
+                <status>0x90</status>
+                <midino>0x11</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>hotcue_3_enabled</key>
+                <status>0x90</status>
+                <midino>0x12</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>hotcue_4_enabled</key>
+                <status>0x90</status>
+                <midino>0x13</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>hotcue_5_enabled</key>
+                <status>0x90</status>
+                <midino>0x14</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>hotcue_6_enabled</key>
+                <status>0x90</status>
+                <midino>0x15</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>hotcue_7_enabled</key>
+                <status>0x90</status>
+                <midino>0x16</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>hotcue_8_enabled</key>
+                <status>0x90</status>
+                <midino>0x17</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <!-- Motor targets -->
+            <output>
+                <group>[Channel1]</group>
+                <key>rate</key>
+                <status>0xB0</status>
+                <midino>0x00</midino>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>playposition</key>
+                <status>0xB0</status>
+                <midino>0x01</midino>
+            </output>
+
+            <!-- Deck 2 LEDs -->
+            <output>
+                <group>[Channel2]</group>
+                <key>play_indicator</key>
+                <status>0x91</status>
+                <midino>0x00</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>cue_indicator</key>
+                <status>0x91</status>
+                <midino>0x01</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>sync_enabled</key>
+                <status>0x91</status>
+                <midino>0x02</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>keylock</key>
+                <status>0x91</status>
+                <midino>0x03</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>quantize</key>
+                <status>0x91</status>
+                <midino>0x04</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>loop_enabled</key>
+                <status>0x91</status>
+                <midino>0x07</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>hotcue_1_enabled</key>
+                <status>0x91</status>
+                <midino>0x10</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>hotcue_2_enabled</key>
+                <status>0x91</status>
+                <midino>0x11</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>hotcue_3_enabled</key>
+                <status>0x91</status>
+                <midino>0x12</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>hotcue_4_enabled</key>
+                <status>0x91</status>
+                <midino>0x13</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>hotcue_5_enabled</key>
+                <status>0x91</status>
+                <midino>0x14</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>hotcue_6_enabled</key>
+                <status>0x91</status>
+                <midino>0x15</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>hotcue_7_enabled</key>
+                <status>0x91</status>
+                <midino>0x16</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>hotcue_8_enabled</key>
+                <status>0x91</status>
+                <midino>0x17</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>rate</key>
+                <status>0xB1</status>
+                <midino>0x00</midino>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>playposition</key>
+                <status>0xB1</status>
+                <midino>0x01</midino>
+            </output>
+
+            <!-- Deck 3 LEDs -->
+            <output>
+                <group>[Channel3]</group>
+                <key>play_indicator</key>
+                <status>0x92</status>
+                <midino>0x00</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>cue_indicator</key>
+                <status>0x92</status>
+                <midino>0x01</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>sync_enabled</key>
+                <status>0x92</status>
+                <midino>0x02</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>keylock</key>
+                <status>0x92</status>
+                <midino>0x03</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>quantize</key>
+                <status>0x92</status>
+                <midino>0x04</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>loop_enabled</key>
+                <status>0x92</status>
+                <midino>0x07</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>hotcue_1_enabled</key>
+                <status>0x92</status>
+                <midino>0x10</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>hotcue_2_enabled</key>
+                <status>0x92</status>
+                <midino>0x11</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>hotcue_3_enabled</key>
+                <status>0x92</status>
+                <midino>0x12</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>hotcue_4_enabled</key>
+                <status>0x92</status>
+                <midino>0x13</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>hotcue_5_enabled</key>
+                <status>0x92</status>
+                <midino>0x14</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>hotcue_6_enabled</key>
+                <status>0x92</status>
+                <midino>0x15</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>hotcue_7_enabled</key>
+                <status>0x92</status>
+                <midino>0x16</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>hotcue_8_enabled</key>
+                <status>0x92</status>
+                <midino>0x17</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>rate</key>
+                <status>0xB2</status>
+                <midino>0x00</midino>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>playposition</key>
+                <status>0xB2</status>
+                <midino>0x01</midino>
+            </output>
+
+            <!-- Deck 4 LEDs -->
+            <output>
+                <group>[Channel4]</group>
+                <key>play_indicator</key>
+                <status>0x93</status>
+                <midino>0x00</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>cue_indicator</key>
+                <status>0x93</status>
+                <midino>0x01</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>sync_enabled</key>
+                <status>0x93</status>
+                <midino>0x02</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>keylock</key>
+                <status>0x93</status>
+                <midino>0x03</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>quantize</key>
+                <status>0x93</status>
+                <midino>0x04</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>loop_enabled</key>
+                <status>0x93</status>
+                <midino>0x07</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>hotcue_1_enabled</key>
+                <status>0x93</status>
+                <midino>0x10</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>hotcue_2_enabled</key>
+                <status>0x93</status>
+                <midino>0x11</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>hotcue_3_enabled</key>
+                <status>0x93</status>
+                <midino>0x12</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>hotcue_4_enabled</key>
+                <status>0x93</status>
+                <midino>0x13</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>hotcue_5_enabled</key>
+                <status>0x93</status>
+                <midino>0x14</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>hotcue_6_enabled</key>
+                <status>0x93</status>
+                <midino>0x15</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>hotcue_7_enabled</key>
+                <status>0x93</status>
+                <midino>0x16</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>hotcue_8_enabled</key>
+                <status>0x93</status>
+                <midino>0x17</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>rate</key>
+                <status>0xB3</status>
+                <midino>0x00</midino>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>playposition</key>
+                <status>0xB3</status>
+                <midino>0x01</midino>
+            </output>
+
+            <!-- ==================== MIXER OUTPUT ==================== -->
+
+            <!-- PFL LEDs -->
+            <output>
+                <group>[Channel1]</group>
+                <key>pfl</key>
+                <status>0x94</status>
+                <midino>0x00</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>pfl</key>
+                <status>0x94</status>
+                <midino>0x01</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>pfl</key>
+                <status>0x94</status>
+                <midino>0x02</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>pfl</key>
+                <status>0x94</status>
+                <midino>0x03</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+
+            <!-- FX1 Assign LEDs -->
+            <output>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>group_[Channel1]_enable</key>
+                <status>0x94</status>
+                <midino>0x04</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>group_[Channel2]_enable</key>
+                <status>0x94</status>
+                <midino>0x05</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>group_[Channel3]_enable</key>
+                <status>0x94</status>
+                <midino>0x06</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit1]</group>
+                <key>group_[Channel4]_enable</key>
+                <status>0x94</status>
+                <midino>0x07</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+
+            <!-- FX2 Assign LEDs -->
+            <output>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>group_[Channel1]_enable</key>
+                <status>0x94</status>
+                <midino>0x08</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>group_[Channel2]_enable</key>
+                <status>0x94</status>
+                <midino>0x09</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>group_[Channel3]_enable</key>
+                <status>0x94</status>
+                <midino>0x0A</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit2]</group>
+                <key>group_[Channel4]_enable</key>
+                <status>0x94</status>
+                <midino>0x0B</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+
+            <!-- ==================== FX OUTPUT ==================== -->
+
+            <!-- FX1 Enable LEDs -->
+            <output>
+                <group>[EffectRack1_EffectUnit1_Effect1]</group>
+                <key>enabled</key>
+                <status>0x95</status>
+                <midino>0x00</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit1_Effect2]</group>
+                <key>enabled</key>
+                <status>0x95</status>
+                <midino>0x01</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit1_Effect3]</group>
+                <key>enabled</key>
+                <status>0x95</status>
+                <midino>0x02</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+
+            <!-- FX2 Enable LEDs -->
+            <output>
+                <group>[EffectRack1_EffectUnit2_Effect1]</group>
+                <key>enabled</key>
+                <status>0x96</status>
+                <midino>0x00</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit2_Effect2]</group>
+                <key>enabled</key>
+                <status>0x96</status>
+                <midino>0x01</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[EffectRack1_EffectUnit2_Effect3]</group>
+                <key>enabled</key>
+                <status>0x96</status>
+                <midino>0x02</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+
+            <!-- ==================== SAMPLER OUTPUT ==================== -->
+
+            <output>
+                <group>[Sampler1]</group>
+                <key>track_loaded</key>
+                <status>0x97</status>
+                <midino>0x14</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Sampler2]</group>
+                <key>track_loaded</key>
+                <status>0x97</status>
+                <midino>0x15</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Sampler3]</group>
+                <key>track_loaded</key>
+                <status>0x97</status>
+                <midino>0x16</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Sampler4]</group>
+                <key>track_loaded</key>
+                <status>0x97</status>
+                <midino>0x17</midino>
+                <on>0x7F</on>
+                <off>0x00</off>
+                <minimum>0.5</minimum>
+            </output>
+
+        </outputs>
+    </controller>
+</MixxxControllerPreset>
